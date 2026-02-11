@@ -73,7 +73,7 @@ const handleSignOut = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 80px);
+  min-height: 100%;
   padding: 20px;
 }
 

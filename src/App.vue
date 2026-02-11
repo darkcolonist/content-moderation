@@ -153,13 +153,15 @@ onMounted(async () => {
   flex: 1;
   overflow-y: auto;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .global-loader {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 200px);
+  min-height: 100%;
   color: var(--primary-color);
 }
 

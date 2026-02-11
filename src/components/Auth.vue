@@ -156,7 +156,7 @@ onMounted(() => {
   align-items: center;
   flex: 1;
   padding: 24px;
-  min-height: min-content;
+  min-height: 100%;
 }
 
 .auth-card {
@@ -182,6 +182,7 @@ onMounted(() => {
   font-weight: 700;
   margin-bottom: 8px;
   background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
