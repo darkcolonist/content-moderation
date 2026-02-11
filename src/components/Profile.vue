@@ -1,8 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
-import { LogOut, User, Mail, ShieldCheck, Sparkles, ShieldAlert, Users, Calendar, Coins, Ban, CheckCircle, Save, Plus, Minus } from 'lucide-vue-next'
+import { LogOut, User, Mail, ShieldCheck, Sparkles, ShieldAlert, Users, Calendar, Coins, Ban, CheckCircle, Save, Plus, Minus, History, Shield, Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import ImageModerator from './ImageModerator.vue'
+import ModerationHistory from './ModerationHistory.vue'
 
 const user = ref(null)
 const profile = ref(null)
@@ -14,6 +16,10 @@ const showTokenModal = ref(false)
 const selectedUser = ref(null)
 const newTokenCount = ref(0)
 const savingTokens = ref(false)
+
+// Navigation state
+const activeTab = ref('profile') // 'profile', 'moderator', 'history'
+const adminSubTab = ref('users') // 'users', 'history'
 
 const fetchAllUsers = async () => {
   const { data: usersData } = await supabase
@@ -92,162 +98,205 @@ const handleSignOut = async () => {
 
 <template>
   <div v-if="user" class="dashboard-container fade-in">
-    <div class="dashboard-grid" :class="{ 'admin-view': profile?.role === 'admin' }">
-      <!-- Account Settings Card -->
-      <div class="standard-card glass">
-        <div class="header-centered">
-          <div class="avatar-glow">
-            <div class="avatar">
-              <User :size="32" />
-            </div>
-          </div>
-          <h2 class="gradient-text">Account Settings</h2>
-          <p class="text-secondary">Manage your presence and authentication</p>
-          <div v-if="profile?.role === 'admin'" class="admin-badge">
-            <ShieldAlert :size="14" />
-            SERVER ADMIN
-          </div>
-        </div>
-
-        <div class="info-list">
-          <div class="info-item">
-            <div class="info-icon">
-              <Mail :size="profile?.role === 'admin' ? 16 : 18" />
-            </div>
-            <div class="info-content">
-              <span class="label">Email Address</span>
-              <span class="value">{{ user.email }}</span>
-            </div>
-          </div>
-
-          <div class="info-item">
-            <div class="info-icon">
-              <ShieldAlert :size="profile?.role === 'admin' ? 16 : 18" />
-            </div>
-            <div class="info-content">
-              <span class="label">Your Role</span>
-              <span class="value status-pill" :class="profile?.role">{{ profile?.role || 'Loading...' }}</span>
-            </div>
-          </div>
-
-          <div class="info-item">
-            <div class="info-icon">
-              <ShieldCheck :size="profile?.role === 'admin' ? 16 : 18" />
-            </div>
-            <div class="info-content">
-              <span class="label">Authentication Status</span>
-              <span class="value status-pill">Verified</span>
-            </div>
-          </div>
-
-          <div class="info-item">
-            <div class="info-icon">
-              <Coins :size="profile?.role === 'admin' ? 16 : 18" />
-            </div>
-            <div class="info-content">
-              <span class="label">Moderation Tokens</span>
-              <span class="value">{{ profile?.tokens || 0 }}</span>
-            </div>
-          </div>
-
-          <div v-if="profile?.is_blocked" class="info-item blocked-info">
-            <div class="info-icon">
-              <Ban :size="profile?.role === 'admin' ? 16 : 18" />
-            </div>
-            <div class="info-content">
-              <span class="label">Status</span>
-              <span class="value status-pill blocked">ACCESS BLOCKED</span>
-            </div>
-          </div>
-
-          <div class="info-item">
-            <div class="info-icon">
-              <Sparkles :size="profile?.role === 'admin' ? 16 : 18" />
-            </div>
-            <div class="info-content">
-              <span class="label">Last Login</span>
-              <span class="value">{{ new Date(user.last_sign_in_at).toLocaleString() }}</span>
-            </div>
-          </div>
-        </div>
-
-        <button @click="handleSignOut" class="btn-primary signout-btn" style="width: 100%;">
-          <LogOut :size="20" />
-          Sign Out
+    <!-- Main Content Area -->
+    <div class="main-content-area">
+      <!-- Tabs for all users -->
+      <div class="content-tabs glass">
+        <button @click="activeTab = 'profile'" :class="{ active: activeTab === 'profile' }">
+          <User :size="18" />
+          <span>Profile</span>
+        </button>
+        <button @click="activeTab = 'moderator'" :class="{ active: activeTab === 'moderator' }">
+          <Shield :size="18" />
+          <span>Moderate</span>
+        </button>
+        <button @click="activeTab = 'history'" :class="{ active: activeTab === 'history' }">
+          <History :size="18" />
+          <span>My History</span>
         </button>
       </div>
 
-      <!-- Admin Dashboard Panel -->
-      <div v-if="profile?.role === 'admin'" class="admin-panel glass fade-in">
-        <div class="panel-header">
-          <div class="title-with-icon">
-            <Users class="icon-accent" :size="24" />
-            <h3 class="gradient-text">User Management</h3>
-          </div>
-          <span class="user-count">{{ allUsers.length }} total users</span>
-        </div>
+      <!-- Profile Section -->
+      <div v-if="activeTab === 'profile'" class="profile-section fade-in">
+        <div class="dashboard-grid" :class="{ 'admin-view': profile?.role === 'admin' }">
+          <!-- Account Settings Card -->
+          <div class="standard-card glass">
+            <div class="header-centered">
+              <div class="avatar-glow">
+                <div class="avatar">
+                  <User :size="32" />
+                </div>
+              </div>
+              <h2 class="gradient-text">Account Settings</h2>
+              <p class="text-secondary">Manage your presence and authentication</p>
+              <div v-if="profile?.role === 'admin'" class="admin-badge">
+                <ShieldAlert :size="14" />
+                SERVER ADMIN
+              </div>
+            </div>
 
-        <div class="table-container">
-          <table class="user-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Tokens</th>
-                <th>Last Activity</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="u in allUsers" :key="u.id" :class="{ 'is-blocked': u.is_blocked }">
-                <td class="user-cell">
-                  <div class="u-avatar small">
-                    {{ u.email?.[0].toUpperCase() }}
-                  </div>
-                  <div class="u-info-mini">
-                    <span class="u-email">{{ u.email }}</span>
-                    <span class="u-date-mini">Joined {{ new Date(u.updated_at).toLocaleDateString() }}</span>
-                  </div>
-                </td>
-                <td data-label="Role">
-                  <span :class="['u-role', u.role]">{{ u.role }}</span>
-                </td>
-                <td data-label="Tokens">
-                  <div class="u-tokens-cell">
-                    <Coins :size="14" />
-                    {{ u.tokens || 0 }}
-                  </div>
-                </td>
-                <td data-label="Activity">
-                  <div class="u-activity-cell" :title="u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'">
-                    <Sparkles :size="14" />
-                    {{ u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never' }}
-                  </div>
-                </td>
-                <td class="actions-cell">
-                  <div class="admin-actions">
-                    <button @click="openTokenModal(u)" class="btn-icon" title="Edit tokens">
-                      <Coins :size="18" />
-                    </button>
-                    
-                    <button 
-                      v-if="u.id !== user.id"
-                      @click="handleUpdateUser(u, { is_blocked: !u.is_blocked })" 
-                      class="btn-icon" 
-                      :class="u.is_blocked ? 'success' : 'danger'"
-                      :title="u.is_blocked ? 'Unblock user' : 'Block user'"
-                    >
-                      <component :is="u.is_blocked ? CheckCircle : Ban" :size="18" />
-                    </button>
-                    <div v-else class="self-status-indicator" title="Your account">
-                      <ShieldCheck :size="16" />
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <div class="info-list">
+              <div class="info-item">
+                <div class="info-icon">
+                  <Mail :size="profile?.role === 'admin' ? 16 : 18" />
+                </div>
+                <div class="info-content">
+                  <span class="label">Email Address</span>
+                  <span class="value">{{ user.email }}</span>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-icon">
+                  <ShieldAlert :size="profile?.role === 'admin' ? 16 : 18" />
+                </div>
+                <div class="info-content">
+                  <span class="label">Your Role</span>
+                  <span class="value status-pill" :class="profile?.role">{{ profile?.role || 'Loading...' }}</span>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-icon">
+                  <ShieldCheck :size="profile?.role === 'admin' ? 16 : 18" />
+                </div>
+                <div class="info-content">
+                  <span class="label">Authentication Status</span>
+                  <span class="value status-pill">Verified</span>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-icon">
+                  <Coins :size="profile?.role === 'admin' ? 16 : 18" />
+                </div>
+                <div class="info-content">
+                  <span class="label">Moderation Tokens</span>
+                  <span class="value">{{ profile?.tokens || 0 }}</span>
+                </div>
+              </div>
+
+              <div v-if="profile?.is_blocked" class="info-item blocked-info">
+                <div class="info-icon">
+                  <Ban :size="profile?.role === 'admin' ? 16 : 18" />
+                </div>
+                <div class="info-content">
+                  <span class="label">Status</span>
+                  <span class="value status-pill blocked">ACCESS BLOCKED</span>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-icon">
+                  <Sparkles :size="profile?.role === 'admin' ? 16 : 18" />
+                </div>
+                <div class="info-content">
+                  <span class="label">Last Login</span>
+                  <span class="value">{{ new Date(user.last_sign_in_at).toLocaleString() }}</span>
+                </div>
+              </div>
+            </div>
+
+            <button @click="handleSignOut" class="btn-primary signout-btn" style="width: 100%;">
+              <LogOut :size="20" />
+              Sign Out
+            </button>
+          </div>
+
+          <!-- Admin Dashboard Panel -->
+          <div v-if="profile?.role === 'admin'" class="admin-panel glass fade-in">
+            <div class="panel-header">
+              <div class="admin-subtabs">
+                <button @click="adminSubTab = 'users'" :class="{ active: adminSubTab === 'users' }">
+                  <Users :size="18" />
+                  <span>User Management</span>
+                </button>
+                <button @click="adminSubTab = 'history'" :class="{ active: adminSubTab === 'history' }">
+                  <History :size="18" />
+                  <span>Global History</span>
+                </button>
+              </div>
+              <span v-if="adminSubTab === 'users'" class="user-count">{{ allUsers.length }} total users</span>
+            </div>
+
+            <div v-if="adminSubTab === 'users'" class="table-container">
+              <table class="user-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Tokens</th>
+                    <th>Last Activity</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="u in allUsers" :key="u.id" :class="{ 'is-blocked': u.is_blocked }">
+                    <td class="user-cell">
+                      <div class="u-avatar small">
+                        {{ u.email?.[0].toUpperCase() }}
+                      </div>
+                      <div class="u-info-mini">
+                        <span class="u-email">{{ u.email }}</span>
+                        <span class="u-date-mini">Joined {{ new Date(u.updated_at).toLocaleDateString() }}</span>
+                      </div>
+                    </td>
+                    <td data-label="Role">
+                      <span :class="['u-role', u.role]">{{ u.role }}</span>
+                    </td>
+                    <td data-label="Tokens">
+                      <div class="u-tokens-cell">
+                        <Coins :size="14" />
+                        {{ u.tokens || 0 }}
+                      </div>
+                    </td>
+                    <td data-label="Activity">
+                      <div class="u-activity-cell" :title="u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'">
+                        <Sparkles :size="14" />
+                        {{ u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never' }}
+                      </div>
+                    </td>
+                    <td class="actions-cell">
+                      <div class="admin-actions">
+                        <button @click="openTokenModal(u)" class="btn-icon" title="Edit tokens">
+                          <Coins :size="18" />
+                        </button>
+                        
+                        <button 
+                          v-if="u.id !== user.id"
+                          @click="handleUpdateUser(u, { is_blocked: !u.is_blocked })" 
+                          class="btn-icon" 
+                          :class="u.is_blocked ? 'success' : 'danger'"
+                          :title="u.is_blocked ? 'Unblock user' : 'Block user'"
+                        >
+                          <component :is="u.is_blocked ? CheckCircle : Ban" :size="18" />
+                        </button>
+                        <div v-else class="self-status-indicator" title="Your account">
+                          <ShieldCheck :size="16" />
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Content for Global History in Admin Panel -->
+            <div v-else-if="adminSubTab === 'history'">
+              <ModerationHistory :is-admin-view="true" />
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Moderator Section -->
+      <div v-else-if="activeTab === 'moderator'" class="moderator-section fade-in">
+        <ImageModerator />
+      </div>
+
+      <!-- Personal History Section -->
+      <div v-else-if="activeTab === 'history'" class="history-section fade-in">
+        <ModerationHistory :user-id="user.id" :is-admin-view="false" />
       </div>
     </div>
 
@@ -310,6 +359,73 @@ const handleSignOut = async () => {
   padding: 40px 20px;
 }
 
+.main-content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.content-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 16px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.content-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.content-tabs button:hover {
+  background: var(--surface-hover);
+  color: white;
+}
+
+.content-tabs button.active {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.admin-subtabs {
+  display: flex;
+  gap: 12px;
+}
+
+.admin-subtabs button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-subtabs button.active {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.1);
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -317,6 +433,7 @@ const handleSignOut = async () => {
   width: 100%;
   max-width: 480px; /* Default for normal users */
   transition: max-width 0.4s ease;
+  margin: 0 auto;
 }
 
 .dashboard-grid.admin-view {
