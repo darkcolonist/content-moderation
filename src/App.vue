@@ -213,13 +213,6 @@ onMounted(async () => {
   transform: translateY(-10px);
 }
 
-/* Primary Button Hover Effect */
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px var(--primary-glow);
-  filter: brightness(1.1);
-}
-
 @media (max-width: 768px) {
   .nav-links {
     gap: 16px;

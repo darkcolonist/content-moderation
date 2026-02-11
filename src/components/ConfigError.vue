@@ -14,37 +14,33 @@ const copyToClipboard = () => {
 </script>
 
 <template>
-  <div class="config-error-container fade-in">
-    <div class="error-card glass">
+  <div class="centered-container fade-in">
+    <div class="standard-card glass error-card">
       <div class="error-icon-wrapper">
         <AlertTriangle :size="48" class="pulse-icon" />
       </div>
       
-      <h1>Configuration Required</h1>
-      <p class="description">
-        NovaModeration needs your Supabase credentials to establish a secure connection to the backend service.
-      </p>
+      <div class="header-centered">
+        <h1 class="gradient-text">Configuration Required</h1>
+        <p class="text-secondary">
+          NovaModeration needs your Supabase credentials to establish a secure connection to the backend service.
+        </p>
+      </div>
 
       <div class="steps-box">
         <div class="step">
-          <div class="step-number">1</div>
-          <div class="step-text">
-            Create a <code>.env</code> file in your project root.
-          </div>
+          <div class="step-badge">1</div>
+          <div class="step-text">Create a <code>.env</code> file in your project root.</div>
         </div>
         <div class="step">
-          <div class="step-number">2</div>
-          <div class="step-text">
-            Add your Supabase <strong>URL</strong> and <strong>Anon Key</strong>.
-          </div>
+          <div class="step-badge">2</div>
+          <div class="step-text">Add your Supabase <strong>URL</strong> and <strong>Anon Key</strong>.</div>
         </div>
       </div>
 
-      <div class="code-block-wrapper">
+      <div class="code-block">
         <div class="code-header">
-          <div class="dots">
-            <span></span><span></span><span></span>
-          </div>
+          <div class="dots"><span></span><span></span><span></span></div>
           <button @click="copyToClipboard" class="copy-btn">
             <Check v-if="copied" :size="14" class="success-icon" />
             <Copy v-else :size="14" />
@@ -55,7 +51,7 @@ const copyToClipboard = () => {
       </div>
 
       <div class="actions">
-        <a href="https://supabase.com/dashboard" target="_blank" class="btn-primary">
+        <a href="https://supabase.com/dashboard" target="_blank" class="btn-primary" style="width: 100%; text-decoration: none;">
           Open Supabase Dashboard
           <ExternalLink :size="18" />
         </a>
@@ -70,22 +66,7 @@ const copyToClipboard = () => {
 </template>
 
 <style scoped>
-.config-error-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100%;
-  padding: 20px;
-}
-
-.error-card {
-  width: 100%;
-  max-width: 520px;
-  padding: 48px;
-  text-align: center;
-  border: 1px solid rgba(244, 63, 94, 0.3);
-}
-
+.error-card { border: 1px solid rgba(244, 63, 94, 0.3); max-width: 520px; text-align: center; }
 .error-icon-wrapper {
   margin-bottom: 24px;
   display: inline-flex;
@@ -94,31 +75,12 @@ const copyToClipboard = () => {
   border-radius: 50%;
   color: var(--accent-color);
 }
-
-.pulse-icon {
-  animation: pulse 2s infinite;
-}
-
+.pulse-icon { animation: pulse 2s infinite; }
 @keyframes pulse {
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.1); opacity: 0.8; }
   100% { transform: scale(1); opacity: 1; }
 }
-
-h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 12px;
-  color: white;
-}
-
-.description {
-  color: var(--text-secondary);
-  margin-bottom: 32px;
-  font-size: 1.05rem;
-  line-height: 1.6;
-}
-
 .steps-box {
   background: var(--surface-color);
   border-radius: 12px;
@@ -127,19 +89,9 @@ h1 {
   text-align: left;
   border: 1px solid var(--border-color);
 }
-
-.step {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.step:last-child {
-  margin-bottom: 0;
-}
-
-.step-number {
+.step { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.step:last-child { margin-bottom: 0; }
+.step-badge {
   width: 24px;
   height: 24px;
   background: var(--primary-color);
@@ -150,98 +102,20 @@ h1 {
   justify-content: center;
   font-size: 0.8rem;
   font-weight: 700;
+  flex-shrink: 0;
 }
-
-.step-text {
-  font-size: 0.95rem;
-  color: var(--text-primary);
-}
-
-.code-block-wrapper {
-  background: #000;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 32px;
-  border: 1px solid var(--border-color);
-  text-align: left;
-}
-
-.code-header {
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dots {
-  display: flex;
-  gap: 6px;
-}
-
-.dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--border-color);
-}
-
+.step-text { font-size: 0.95rem; color: var(--text-primary); }
 .copy-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  background: none; border: none; color: var(--text-secondary);
+  font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px; border-radius: 4px; transition: all 0.2s;
 }
-
-.copy-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-.success-icon {
-  color: #10b981;
-}
-
-.code-content {
-  padding: 16px;
-  margin: 0;
-  font-size: 0.9rem;
-  color: #d1d5db;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  overflow-x: auto;
-}
-
-.actions {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
-}
-
-.btn-primary {
-  width: 100%;
-}
-
+.copy-btn:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+.success-icon { color: #10b981; }
 .footer-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  color: var(--text-secondary); font-size: 0.85rem; margin-top: 24px;
 }
-
-code {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: monospace;
-  color: var(--primary-color);
-}
+code { background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: var(--primary-color); }
+.text-secondary { color: var(--text-secondary); }
 </style>

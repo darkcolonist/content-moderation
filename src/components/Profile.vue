@@ -16,16 +16,16 @@ const handleSignOut = async () => {
 </script>
 
 <template>
-  <div v-if="user" class="dashboard-container fade-in">
-    <div class="user-card glass">
-      <div class="profile-header">
+  <div v-if="user" class="centered-container fade-in">
+    <div class="standard-card glass">
+      <div class="header-centered">
         <div class="avatar-glow">
           <div class="avatar">
             <User :size="32" />
           </div>
         </div>
-        <h2>Account Settings</h2>
-        <p>Manage your presence and authentication</p>
+        <h2 class="gradient-text">Account Settings</h2>
+        <p class="text-secondary">Manage your presence and authentication</p>
       </div>
 
       <div class="info-list">
@@ -60,7 +60,7 @@ const handleSignOut = async () => {
         </div>
       </div>
 
-      <button @click="handleSignOut" class="btn-primary signout-btn">
+      <button @click="handleSignOut" class="btn-primary signout-btn" style="width: 100%;">
         <LogOut :size="20" />
         Sign Out
       </button>
@@ -69,25 +69,6 @@ const handleSignOut = async () => {
 </template>
 
 <style scoped>
-.dashboard-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100%;
-  padding: 20px;
-}
-
-.user-card {
-  width: 100%;
-  max-width: 480px;
-  padding: 40px;
-}
-
-.profile-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
 .avatar-glow {
   width: 80px;
   height: 80px;
@@ -107,17 +88,6 @@ const handleSignOut = async () => {
   align-items: center;
   justify-content: center;
   color: white;
-}
-
-.profile-header h2 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.profile-header p {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
 }
 
 .info-list {
@@ -165,12 +135,7 @@ const handleSignOut = async () => {
   font-weight: 500;
 }
 
-.status-pill {
-  color: #10b981;
-}
-
 .signout-btn {
-  width: 100%;
   background: rgba(244, 63, 94, 0.1);
   color: var(--accent-color);
   border: 1px solid rgba(244, 63, 94, 0.2);
@@ -181,4 +146,6 @@ const handleSignOut = async () => {
   color: white;
   box-shadow: 0 8px 16px var(--accent-glow);
 }
+
+.text-secondary { color: var(--text-secondary); }
 </style>

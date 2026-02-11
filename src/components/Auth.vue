@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { LogIn, UserPlus, Loader2 } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
@@ -12,12 +12,7 @@ const email = ref('')
 const password = ref('')
 const error = ref(null)
 
-// Sync with route for initial load and subsequent changes
 const isRegister = computed(() => route.path === '/signup' || route.path.includes('signup'))
-
-onMounted(() => {
-  console.log('Auth component mounted on:', route.path)
-})
 
 const handleAuth = async () => {
   loading.value = true
@@ -66,25 +61,21 @@ const handleOAuthLogin = async (provider) => {
 }
 
 onMounted(() => {
-  // Catch errors passed back in the URL from failed OAuth attempts
   const hash = window.location.hash
   const params = new URLSearchParams(hash.includes('?') ? hash.split('?')[1] : '')
-  
   const errorMsg = params.get('error_description') || params.get('error')
   if (errorMsg) {
     error.value = errorMsg.replace(/\+/g, ' ')
   }
-  
-  console.log('Auth component mounted on:', route.path)
 })
 </script>
 
 <template>
-  <div class="auth-container fade-in">
-    <div class="auth-card glass">
-      <div class="auth-header">
-        <h1>{{ isRegister ? 'Join the Future' : 'Welcome Back' }}</h1>
-        <p>{{ isRegister ? 'Create your account to get started' : 'Sign in to your account to continue' }}</p>
+  <div class="centered-container fade-in">
+    <div class="standard-card glass">
+      <div class="header-centered">
+        <h1 class="gradient-text">{{ isRegister ? 'Join the Future' : 'Welcome Back' }}</h1>
+        <p class="text-secondary">{{ isRegister ? 'Create your account to get started' : 'Sign in to your account to continue' }}</p>
       </div>
 
       <form @submit.prevent="handleAuth" class="auth-form">
@@ -114,7 +105,7 @@ onMounted(() => {
           {{ error }}
         </div>
 
-        <button type="submit" class="btn-primary auth-submit" :disabled="loading">
+        <button type="submit" class="btn-primary" :disabled="loading" style="width: 100%;">
           <Loader2 v-if="loading" class="animate-spin" />
           <template v-else>
             <component :is="isRegister ? UserPlus : LogIn" :size="20" />
@@ -150,63 +141,12 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.auth-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  padding: 24px;
-  min-height: 100%;
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 440px;
-  padding: 40px;
-  margin: auto;
-  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.auth-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.auth-header p {
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-}
-
-.auth-form {
-  margin-bottom: 24px;
-}
-
-.auth-submit {
-  width: 100%;
-  margin-top: 8px;
-}
-
+.auth-form { margin-top: 24px; }
 .divider {
   position: relative;
   text-align: center;
   margin: 24px 0;
 }
-
 .divider::before {
   content: "";
   position: absolute;
@@ -216,55 +156,23 @@ onMounted(() => {
   height: 1px;
   background: var(--border-color);
 }
-
 .divider span {
   position: relative;
-  background: #111; /* Match surface color roughly */
+  background: var(--surface-color);
   padding: 0 12px;
   color: var(--text-secondary);
   font-size: 0.85rem;
 }
-
-.btn-secondary {
-  width: 100%;
-  background: var(--surface-hover);
-  border: 1px solid var(--border-color);
-  color: white;
-  padding: 12px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
-}
-
 .google-btn {
+  width: 100%;
   gap: 12px;
-  background: var(--surface-hover) !important;
-  color: white !important;
-  border: 1px solid var(--border-color) !important;
 }
-
-.google-btn:hover {
-  background: var(--border-color) !important;
-  border-color: var(--text-secondary) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.btn-secondary:hover:not(.google-btn) {
-  background: var(--border-color);
-}
-
 .auth-footer {
   margin-top: 32px;
   text-align: center;
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
-
 .text-btn {
   background: none;
   border: none;
@@ -274,27 +182,11 @@ onMounted(() => {
   padding: 0;
   margin-left: 4px;
 }
-
-.text-btn:hover {
-  text-decoration: underline;
-}
-
-.error-message {
-  background: rgba(244, 63, 94, 0.1);
-  color: var(--accent-color);
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  margin-bottom: 16px;
-  border: 1px solid rgba(244, 63, 94, 0.2);
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
+.text-btn:hover { text-decoration: underline; }
+.animate-spin { animation: spin 1s linear infinite; }
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+.text-secondary { color: var(--text-secondary); }
 </style>

@@ -1,9 +1,9 @@
 <script setup>
-import { Book, Code, Terminal, MessageSquare } from 'lucide-vue-next'
+import { Book, Terminal, MessageSquare } from 'lucide-vue-next'
 </script>
 
 <template>
-  <div class="docs-page container fade-in">
+  <div class="page-container fade-in">
     <div class="docs-layout">
       <aside class="docs-sidebar">
         <div class="sidebar-group">
@@ -27,13 +27,13 @@ import { Book, Code, Terminal, MessageSquare } from 'lucide-vue-next'
       <main class="docs-content">
         <header class="content-header">
           <span class="breadcrumb">Docs / Getting Started</span>
-          <h1>Introduction</h1>
-          <p class="lead">Welcome to the NovaModeration API documentation. Learn how to integrate our AI safety tools into your application.</p>
+          <h1 class="gradient-text">Introduction</h1>
+          <p class="text-secondary lead">Welcome to the NovaModeration API documentation. Learn how to integrate our AI safety tools into your application.</p>
         </header>
 
         <section class="docs-section">
           <h2>Overview</h2>
-          <p>NovaModeration provides a robust set of REST APIs for real-time content analysis. Whether you're building a social network, an e-commerce platform, or a private community, our tools help you maintain safety standards at scale.</p>
+          <p class="text-secondary">NovaModeration provides a robust set of REST APIs for real-time content analysis. Whether you're building a social network, an e-commerce platform, or a private community, our tools help you maintain safety standards at scale.</p>
           
           <div class="info-box glass">
             <Book :size="20" />
@@ -43,25 +43,25 @@ import { Book, Code, Terminal, MessageSquare } from 'lucide-vue-next'
 
         <section class="docs-section">
           <h2>Authentication</h2>
-          <p>All API requests must be authenticated using an API key provided in your dashboard. Include the key in the <code>X-API-KEY</code> header.</p>
+          <p class="text-secondary">All API requests must be authenticated using an API key provided in your dashboard. Include the key in the <code>X-API-KEY</code> header.</p>
           
-          <div class="code-example">
+          <div class="code-block">
             <div class="code-header">
               <span>Example Request</span>
               <Terminal :size="14" />
             </div>
-            <pre><code>curl -X POST https://api.novamode.ai/v1/image \
+            <pre class="code-content"><code>curl -X POST https://api.novamode.ai/v1/image \
   -H "X-API-KEY: YOUR_API_KEY" \
   -F "image=@photo.jpg"</code></pre>
           </div>
         </section>
 
         <div class="docs-footer">
-          <div class="footer-card">
+          <div class="footer-card glass">
             <MessageSquare :size="24" />
             <div>
               <h4>Need help?</h4>
-              <p>Join our Discord community or contact support.</p>
+              <p class="text-secondary">Join our Discord community or contact support.</p>
             </div>
           </div>
         </div>
@@ -71,143 +71,27 @@ import { Book, Code, Terminal, MessageSquare } from 'lucide-vue-next'
 </template>
 
 <style scoped>
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 24px;
-}
-
-.docs-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 64px;
-}
-
-.docs-sidebar {
-  position: sticky;
-  top: 100px;
-  height: fit-content;
-}
-
-.sidebar-group {
-  margin-bottom: 32px;
-}
-
-.sidebar-group h5 {
-  color: var(--text-primary);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 16px;
-}
-
-.sidebar-group ul {
-  list-style: none;
-}
-
-.sidebar-group li {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  padding: 8px 0;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.sidebar-group li:hover, .sidebar-group li.active {
-  color: var(--primary-color);
-}
-
-.docs-content {
-  max-width: 800px;
-}
-
-.content-header {
-  margin-bottom: 48px;
-}
-
-.breadcrumb {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-  display: block;
-}
-
+.docs-layout { display: grid; grid-template-columns: 240px 1fr; gap: 64px; }
+.docs-sidebar { position: sticky; top: 100px; height: fit-content; }
+.sidebar-group { margin-bottom: 32px; }
+.sidebar-group h5 { color: var(--text-primary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
+.sidebar-group ul { list-style: none; }
+.sidebar-group li { color: var(--text-secondary); font-size: 0.9rem; padding: 8px 0; cursor: pointer; transition: color 0.2s; }
+.sidebar-group li:hover, .sidebar-group li.active { color: var(--primary-color); }
+.docs-content { max-width: 800px; }
+.content-header { margin-bottom: 48px; }
+.breadcrumb { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; display: block; }
 h1 { font-size: 2.5rem; margin-bottom: 16px; }
-.lead { font-size: 1.2rem; color: var(--text-secondary); line-height: 1.6; }
-
-.docs-section {
-  margin-bottom: 64px;
-}
-
-.docs-section h2 {
-  font-size: 1.75rem;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 12px;
-}
-
-.docs-section p {
-  color: var(--text-secondary);
-  line-height: 1.8;
-  margin-bottom: 24px;
-}
-
-.info-box {
-  display: flex;
-  gap: 16px;
-  padding: 24px;
-  border-radius: 12px;
-  background: rgba(99, 102, 241, 0.05);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  color: var(--text-primary);
-}
-
+.lead { font-size: 1.2rem; line-height: 1.6; }
+.docs-section { margin-bottom: 64px; }
+.docs-section h2 { font-size: 1.75rem; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+.docs-section p { line-height: 1.8; margin-bottom: 24px; }
 .info-box svg { color: var(--primary-color); flex-shrink: 0; }
 .info-box p { margin: 0; font-size: 0.95rem; }
-
-.code-example {
-  background: #000;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  overflow: hidden;
-}
-
-.code-header {
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-pre {
-  padding: 24px;
-  overflow-x: auto;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.9rem;
-  color: #d1d5db;
-}
-
-.docs-footer {
-  margin-top: 80px;
-  padding-top: 40px;
-  border-top: 1px solid var(--border-color);
-}
-
-.footer-card {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 32px;
-  background: var(--surface-hover);
-  border-radius: 16px;
-  border: 1px solid var(--border-color);
-}
-
+.docs-footer { margin-top: 80px; padding-top: 40px; border-top: 1px solid var(--border-color); }
+.footer-card { display: flex; align-items: center; gap: 24px; padding: 32px; border-radius: 16px; }
 .footer-card h4 { margin-bottom: 4px; }
-.footer-card p { margin: 0; color: var(--text-secondary); font-size: 0.9rem; }
+.text-secondary { color: var(--text-secondary); }
 
 @media (max-width: 900px) {
   .docs-layout { grid-template-columns: 1fr; }
