@@ -41,6 +41,13 @@ A premium content moderation suite built with Vue 3, Vite, and Supabase.
 - `src/components/Profile.vue`: User dashboard and profile management.
 - `src/style.css`: Global design system and theme variables.
 
+## 🤖 GitHub Actions
+
+This project includes automated workflows for:
+- **Baseline CI**: Automatically builds the project on every push and pull request to ensure stability.
+- **Deploy to GitHub Pages**: Automatically deploys the latest version to GitHub Pages when changes are pushed to `main`.
+
+
 ## 🌐 SEO & Meta
 
 - Pre-configured meta tags in `index.html`.
