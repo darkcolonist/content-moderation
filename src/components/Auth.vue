@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { LogIn, UserPlus, Loader2 } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
+import { toast } from 'vue-sonner'
 
 const router = useRouter()
 const route = useRoute()
@@ -28,17 +29,32 @@ const handleAuth = async () => {
         }
       })
       if (signUpError) throw signUpError
-      alert('Confirmation email sent! Please check your inbox.')
+      toast.success('Confirmation email sent! Please check your inbox.')
     } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: { user: authUser }, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.value,
         password: password.value,
       })
       if (signInError) throw signInError
+
+      // Check if user is blocked in profiles
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_blocked')
+        .eq('id', authUser.id)
+        .single()
+      
+      if (profileData?.is_blocked) {
+        await supabase.auth.signOut()
+        throw new Error('This account has been blocked by an administrator.')
+      }
+
+      toast.success('Successfully signed in!')
       router.push('/profile')
     }
   } catch (err) {
     error.value = err.message
+    toast.error(err.message)
   } finally {
     loading.value = false
   }

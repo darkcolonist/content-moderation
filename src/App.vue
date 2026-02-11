@@ -4,6 +4,7 @@ import { supabase, isConfigured } from './lib/supabase'
 import ConfigError from './components/ConfigError.vue'
 import { Rocket, Loader2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import { Toaster } from 'vue-sonner'
 
 const session = ref(null)
 const loading = ref(true)
@@ -78,6 +79,8 @@ onMounted(async () => {
     <!-- Background Orbs -->
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
+
+    <Toaster position="bottom-right" richColors closeButton />
   </div>
 </template>
 
