@@ -29,5 +29,52 @@ If you are using the Supabase CLI, you would run:
 
 Since you are using the dashboard, just click **Save** or **Deploy** in the dashboard editor.
 
-## 5. Database Table
-Make sure you have run the migration I provided to create the `moderation_history` table. You can do this in the **SQL Editor** of your Supabase dashboard.
+## 5. Database Table & Security
+1. Run the migration `supabase/migrations/20260212114600_create_api_keys.sql` in your **SQL Editor**. This creates the `api_keys` table and the `verify_api_key` / `deduct_user_token` functions.
+2. Make sure you have the `moderation_history` table created from previous migrations.
+
+## 6. Authentication
+The edge function now uses API keys for authentication.
+- Header: `x-api-key: your_api_key`
+- Or: `Authorization: Bearer your_api_key`
+
+A user must have:
+1. A valid API key in the `api_keys` table.
+2. At least 1 token in their `profiles.tokens` column.
+3. Not exceeded the rate limit (1 call per 5 seconds).
+
+## 7. Testing the Function
+
+### Option A: Using cURL
+Replace `[PROJECT_REF]` and `[USER_API_KEY]` with your actual values.
+
+```bash
+curl -i -X POST "https://[PROJECT_REF].supabase.co/functions/v1/moderate-image" \
+  -H "x-api-key: [USER_API_KEY]" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "imageUrl": "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+    "tasks": "porn_moderation,gore_moderation"
+  }'
+```
+
+### Option B: Using Postman
+1. **Method**: Set to `POST`.
+2. **URL**: `https://[PROJECT_REF].supabase.co/functions/v1/moderate-image`
+3. **Headers**:
+   - `Content-Type`: `application/json`
+   - `x-api-key`: `YOUR_API_KEY` (Generate this in the Dashboard -> API Keys section)
+4. **Body**: Select `raw` and `JSON` format.
+   ```json
+   {
+     "imageUrl": "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+     "tasks": "porn_moderation,suggestive_nudity_moderation,gore_moderation"
+   }
+   ```
+5. **Click Send**.
+
+### Common Response Statuses
+- `200 OK`: Success! Check `final_decision` (OK/KO).
+- `401 Unauthorized`: API key is missing.
+- `403 Forbidden`: API key is invalid, user is out of tokens, or rate limit exceeded.
+- `400 Bad Request`: Missing `imageUrl` or other input error.

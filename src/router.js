@@ -67,6 +67,18 @@ const routes = [
                 props: { isAdminView: true }
             },
             {
+                path: '/api-keys',
+                name: 'api-keys',
+                component: () => import('./components/ApiKeyManager.vue'),
+                props: { isAdminView: false }
+            },
+            {
+                path: '/admin/api-keys',
+                name: 'admin-api-keys',
+                component: () => import('./components/ApiKeyManager.vue'),
+                props: { isAdminView: true }
+            },
+            {
                 path: '/admin/users',
                 name: 'admin-users',
                 component: () => import('./components/AdminUsers.vue')

@@ -5,27 +5,67 @@ const PICPURIFY_API_URL = "https://www.picpurify.com/analyse/1.1"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { imageUrl, tasks, userId } = await req.json()
-    
-    const PICPURIFY_API_KEY = Deno.env.get('PICPURIFY_API_KEY')
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const PICPURIFY_API_KEY = Deno.env.get('PICPURIFY_API_KEY')
 
-    if (!PICPURIFY_API_KEY) {
-      throw new Error('PICPURIFY_API_KEY is not set in Supabase Secrets')
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !PICPURIFY_API_KEY) {
+      throw new Error('Missing environment variables')
     }
 
-    // 1. Prepare PicPurify request
+    // 1. Get request body early to check imageUrl
+    const body = await req.json().catch(() => ({}))
+    const { imageUrl, tasks } = body
+
+    if (!imageUrl) {
+      return new Response(JSON.stringify({ error: 'imageUrl is required' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      })
+    }
+
+    // 2. Get API key from headers
+    const apiKey = req.headers.get('x-api-key') || req.headers.get('Authorization')?.replace('Bearer ', '')
+
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'Missing API key' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      })
+    }
+
+    // 3. Initialize Supabase
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+    // 4. Verify API key, check rate limit and tokens (Initial check)
+    const { data: verifyData, error: verifyError } = await supabase.rpc('verify_api_key', {
+      p_api_key: apiKey
+    })
+
+    if (verifyError) throw verifyError
+    
+    const verification = verifyData[0]
+
+    if (!verification.success) {
+      return new Response(JSON.stringify({ error: verification.error_message }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      })
+    }
+
+    const { user_id: userId } = verification
+
+    // 5. Prepare PicPurify request
     const formData = new FormData()
     formData.append('API_KEY', PICPURIFY_API_KEY)
     formData.append('task', tasks || 'porn_moderation,suggestive_nudity_moderation,gore_moderation,drug_moderation,weapon_moderation')
@@ -36,11 +76,21 @@ serve(async (req) => {
       body: formData
     })
 
+    if (!response.ok) {
+        throw new Error(`PicPurify API error: ${response.statusText}`)
+    }
+
     const result = await response.json()
 
-    // 2. Log to Database
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
-    
+    // 6. If PicPurify was successful (moderation result returned), deduct token
+    if (result.status === 'success') {
+      const { error: deductError } = await supabase.rpc('deduct_user_token', {
+        p_user_id: userId
+      })
+      if (deductError) console.error('Token deduction error:', deductError)
+    }
+
+    // 7. Log to Moderation History
     const { error: dbError } = await supabase.from('moderation_history').insert({
       user_id: userId,
       media_id: result.media?.media_id,
@@ -59,8 +109,9 @@ serve(async (req) => {
       status: 200,
     })
 
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: any) {
+    console.error('Edge Function Error:', error)
+    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
     })

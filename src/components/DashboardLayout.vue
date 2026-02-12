@@ -11,7 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  X
+  X,
+  KeyRound
 } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -43,10 +44,12 @@ const navItems = [
   { name: 'Profile', path: '/profile', icon: User },
   { name: 'Moderate', path: '/moderate', icon: Shield },
   { name: 'My History', path: '/history', icon: History },
+  { name: 'API Keys', path: '/api-keys', icon: KeyRound },
 ]
 
 const adminItems = [
   { name: 'Global History', path: '/admin/history', icon: ShieldCheck },
+  { name: 'API Management', path: '/admin/api-keys', icon: KeyRound },
   { name: 'User Management', path: '/admin/users', icon: Users },
 ]
 
