@@ -1,41 +1,20 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { supabase, isConfigured } from './lib/supabase'
 import ConfigError from './components/ConfigError.vue'
-import { Rocket, Loader2 } from 'lucide-vue-next'
+import { Rocket, Loader2, ChevronDown, User, Shield, LogOut, Settings } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { Toaster } from 'vue-sonner'
 
-const session = ref(null)
-const loading = ref(true)
+import { authStore } from './lib/authStore'
+
+const showDropdown = ref(false)
 const router = useRouter()
 
-onMounted(async () => {
-  if (!isConfigured) {
-    loading.value = false
-    return
-  }
-
-  try {
-    const { data } = await supabase.auth.getSession()
-    session.value = data.session
-    
-    if (data.session && (router.currentRoute.value.path === '/' || router.currentRoute.value.path === '/signup')) {
-      router.push('/profile')
-    }
-  } catch (err) {
-    console.error('Session check failed:', err)
-  } finally {
-    loading.value = false
-  }
-
-  supabase.auth.onAuthStateChange((_event, _session) => {
-    session.value = _session
-    if (_session) {
-      if (router.currentRoute.value.path === '/' || router.currentRoute.value.path === '/signup') {
-        router.push('/profile')
-      }
-    } else {
+onMounted(() => {
+  // Watch for session changes to handle sign-out redirection
+  watch(() => authStore.session, (newSession) => {
+    if (!newSession) {
       const publicRoutes = ['/', '/signup', '/features', '/pricing', '/docs']
       if (!publicRoutes.includes(router.currentRoute.value.path)) {
         router.push('/')
@@ -43,6 +22,11 @@ onMounted(async () => {
     }
   })
 })
+
+const handleSignOut = async () => {
+  await supabase.auth.signOut()
+  showDropdown.value = false
+}
 </script>
 
 <template>
@@ -57,13 +41,55 @@ onMounted(async () => {
           <router-link to="/features" class="nav-link">Features</router-link>
           <router-link to="/pricing" class="nav-link">Pricing</router-link>
           <router-link to="/docs" class="nav-link">Docs</router-link>
-          <router-link v-if="session" to="/profile" class="nav-link profile-link">Account</router-link>
+          
+          <div v-if="authStore.session" class="account-dropdown-wrapper">
+            <button @click="showDropdown = !showDropdown" class="account-trigger glass" :class="{ active: showDropdown }">
+              <div class="user-avatar-mini">
+                {{ authStore.session.user.email[0].toUpperCase() }}
+              </div>
+              <span class="user-email-mini">{{ authStore.session.user.email.split('@')[0] }}</span>
+              <ChevronDown :size="16" class="chevron" :class="{ rotate: showDropdown }" />
+            </button>
+            
+            <transition name="dropdown">
+              <div v-if="showDropdown" class="dropdown-menu glass" @mouseleave="showDropdown = false">
+                <div class="dropdown-header">
+                  <span class="dropdown-label">Account</span>
+                  <span class="dropdown-email">{{ authStore.session.user.email }}</span>
+                </div>
+                
+                <div class="dropdown-divider"></div>
+                
+                <router-link to="/profile" class="dropdown-item" @click="showDropdown = false">
+                  <User :size="18" />
+                  <span>Account Settings</span>
+                </router-link>
+                
+                <router-link to="/moderate" class="dropdown-item" @click="showDropdown = false">
+                  <Shield :size="18" />
+                  <span>Moderate</span>
+                </router-link>
+                
+                <router-link v-if="authStore.profile?.role === 'admin'" to="/admin/users" class="dropdown-item admin" @click="showDropdown = false">
+                  <Settings :size="18" />
+                  <span>Admin Panel</span>
+                </router-link>
+
+                <div class="dropdown-divider"></div>
+
+                <button @click="handleSignOut" class="dropdown-item logout">
+                  <LogOut :size="18" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </transition>
+          </div>
         </div>
       </div>
     </nav>
 
     <main class="main-content">
-      <div v-if="loading" class="global-loader">
+      <div v-if="authStore.loading && !authStore.profile" class="global-loader">
         <Loader2 class="animate-spin" :size="40" />
       </div>
       <ConfigError v-else-if="!isConfigured" />
@@ -152,12 +178,148 @@ onMounted(async () => {
   border: 1px solid var(--border-color);
 }
 
+.account-dropdown-wrapper {
+  position: relative;
+}
+
+.account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-color);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.account-trigger:hover, .account-trigger.active {
+  background: var(--border-color);
+  border-color: var(--primary-color);
+}
+
+.user-avatar-mini {
+  width: 24px;
+  height: 24px;
+  background: var(--primary-color);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.user-email-mini {
+  font-size: 0.9rem;
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  transition: transform 0.2s;
+  color: var(--text-secondary);
+}
+
+.chevron.rotate {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 240px;
+  padding: 8px;
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  transform-origin: top right;
+  background: #111111 !important; /* Solid background to prevent transparency issues */
+  border: 1px solid var(--border-color);
+}
+
+.dropdown-header {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.dropdown-email {
+  font-size: 0.85rem;
+  color: white;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 8px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--surface-hover);
+  color: white;
+}
+
+.dropdown-item.admin:hover {
+  color: var(--primary-color);
+}
+
+.dropdown-item.logout:hover {
+  color: var(--accent-color);
+}
+
+/* Transitions */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+}
+
 .main-content {
   flex: 1;
-  overflow-y: auto;
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* Allow global scrolling for public pages */
+  overflow-x: hidden;
 }
 
 .global-loader {

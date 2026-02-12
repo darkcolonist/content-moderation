@@ -7,6 +7,7 @@ import 'nprogress/nprogress.css'
 NProgress.configure({ showSpinner: false, trickleSpeed: 200 })
 
 const routes = [
+    // Public Routes
     {
         path: '/',
         name: 'login',
@@ -32,10 +33,40 @@ const routes = [
         name: 'docs',
         component: () => import('./views/Docs.vue')
     },
+
+    // Dashboard (Protected) Routes
     {
-        path: '/profile',
-        name: 'profile',
-        component: () => import('./components/Profile.vue')
+        path: '/dashboard',
+        component: () => import('./components/DashboardLayout.vue'),
+        children: [
+            {
+                path: '/profile',
+                name: 'profile',
+                component: () => import('./components/Profile.vue')
+            },
+            {
+                path: '/moderate',
+                name: 'moderate',
+                component: () => import('./components/ImageModerator.vue')
+            },
+            {
+                path: '/history',
+                name: 'history',
+                component: () => import('./components/ModerationHistory.vue'),
+                props: { isAdminView: false }
+            },
+            {
+                path: '/admin/history',
+                name: 'admin-history',
+                component: () => import('./components/ModerationHistory.vue'),
+                props: { isAdminView: true }
+            },
+            {
+                path: '/admin/users',
+                name: 'admin-users',
+                component: () => import('./components/AdminUsers.vue')
+            }
+        ]
     },
     {
         path: '/:pathMatch(.*)*',
@@ -51,14 +82,12 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
     NProgress.start()
 
-    // 1. If not configured, stay on home or whatever (App.vue handles the global ConfigError overlay)
     if (!isConfigured) {
         return next()
     }
 
     const { data: { session } } = await supabase.auth.getSession()
 
-    // 2. Define protected and public routes
     const publicRoutes = ['/', '/signup', '/features', '/pricing', '/docs']
     const isProtectedRoute = !publicRoutes.includes(to.path)
 
