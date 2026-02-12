@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseUrl } from '../lib/supabase'
 import { 
   KeyRound, 
   Plus, 
@@ -55,6 +55,11 @@ const fetchApiKeys = async () => {
 const handleCreateKey = async () => {
   if (!newKeyName.value.trim()) {
     toast.error('Please enter a name for the API key')
+    return
+  }
+
+  if (apiKeys.value.length >= 5) {
+    toast.error('Maximum limit of 5 API keys reached. Please revoke an existing key first.')
     return
   }
 
@@ -138,7 +143,12 @@ onMounted(() => {
       <!-- Create Key Section (Only for Users or Admin testing own keys) -->
       <div v-if="!isAdminView" class="create-key-section">
         <div class="input-group">
-          <label class="input-label">Key Name (e.g., "Production Web App")</label>
+          <div class="label-flex">
+            <label class="input-label">Key Name (e.g., "Production Web App")</label>
+            <span class="key-count-label" :class="{ 'at-limit': apiKeys.length >= 5 }">
+              {{ apiKeys.length }}/5 keys
+            </span>
+          </div>
           <div class="input-row">
             <div class="input-wrapper">
               <KeyRound :size="18" class="input-icon" />
@@ -148,16 +158,52 @@ onMounted(() => {
                 placeholder="Enter a descriptive name..."
                 class="input-field"
                 @keyup.enter="handleCreateKey"
-                :disabled="creating"
+                :disabled="creating || apiKeys.length >= 5"
               />
             </div>
-            <button @click="handleCreateKey" class="btn-primary create-btn" :disabled="creating || !newKeyName.trim()">
+            <button 
+              @click="handleCreateKey" 
+              class="btn-primary create-btn" 
+              :disabled="creating || !newKeyName.trim() || apiKeys.length >= 5"
+            >
               <Loader2 v-if="creating" class="animate-spin" :size="18" />
               <Plus v-else :size="18" />
-              <span>Generate Key</span>
+              <span>{{ apiKeys.length >= 5 ? 'Limit Reached' : 'Generate Key' }}</span>
             </button>
           </div>
+          <p v-if="apiKeys.length >= 5" class="limit-warning">
+            You have reached the maximum limit of 5 API keys. Revoke an existing key to create a new one.
+          </p>
         </div>
+      </div>
+
+      <!-- Security Notice -->
+      <div v-if="!isAdminView" class="security-notice">
+        <ShieldAlert :size="18" class="notice-icon" />
+        <div class="notice-content">
+          <strong>Security Notice:</strong> If you suspect your API key has been compromised, revoke it immediately to prevent unauthorized access and potential system blockage.
+        </div>
+      </div>
+
+      <!-- Usage Guide -->
+      <div v-if="!isAdminView" class="usage-guide">
+        <h4>API Usage Guide</h4>
+        <p class="guide-description">Use your API key to authenticate requests to the moderation endpoint:</p>
+        <div class="code-example">
+          <div class="code-header">
+            <span>cURL Example</span>
+          </div>
+          <pre><code>curl -X POST {{ supabaseUrl }}/functions/v1/moderate-image \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "imageUrl": "https://example.com/image.jpg",
+    "tasks": "porn_moderation,gore_moderation"
+  }'</code></pre>
+        </div>
+        <p class="endpoint-info">
+          <strong>Endpoint:</strong> <code>{{ supabaseUrl }}/functions/v1/moderate-image</code>
+        </p>
       </div>
 
       <div class="table-container">
@@ -257,6 +303,33 @@ onMounted(() => {
   border-radius: 16px;
   border: 1px solid var(--border-color);
   margin-bottom: 32px;
+}
+
+.label-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.key-count-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.key-count-label.at-limit {
+  color: #fb7185;
+  background: rgba(244, 63, 94, 0.1);
+}
+
+.limit-warning {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: #fb7185;
+  font-weight: 500;
 }
 
 .input-row {
@@ -397,6 +470,98 @@ onMounted(() => {
 }
 
 .text-success { color: #10b981; }
+
+.security-notice {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  align-items: flex-start;
+}
+
+.notice-icon {
+  color: #fbbf24;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notice-content {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.notice-content strong {
+  color: #fbbf24;
+}
+
+.usage-guide {
+  background: var(--surface-hover);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 32px;
+}
+
+.usage-guide h4 {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.guide-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.code-example {
+  background: #000;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.code-header {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.code-example pre {
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.code-example code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+  color: #d1d5db;
+  line-height: 1.6;
+}
+
+.endpoint-info {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.endpoint-info code {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary-color);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
 
 @media (max-width: 640px) {
   .input-row {

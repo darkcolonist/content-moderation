@@ -208,6 +208,14 @@ body {
   background: var(--border-color);
 }
 
+.btn-secondary.disabled,
+.btn-primary.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
 .input-group {
   margin-bottom: 20px;
 }

@@ -2,13 +2,14 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { supabase, isConfigured, appName } from './lib/supabase'
 import ConfigError from './components/ConfigError.vue'
-import { Rocket, Loader2, ChevronDown, User, Shield, LogOut, Settings } from 'lucide-vue-next'
+import { Rocket, Loader2, ChevronDown, User, Shield, LogOut, Settings, Menu, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { Toaster } from 'vue-sonner'
 
 import { authStore } from './lib/authStore'
 
 const showDropdown = ref(false)
+const showMobileMenu = ref(false)
 const router = useRouter()
 
 onMounted(() => {
@@ -33,20 +34,31 @@ const isDashboard = computed(() => {
   const publicRoutes = ['/', '/login', '/signup', '/features', '/pricing', '/docs']
   return !publicRoutes.includes(router.currentRoute.value.path) && authStore.session
 })
+
+const closeMobileMenu = () => {
+  showMobileMenu.value = false
+}
 </script>
 
 <template>
   <div class="app-wrapper" :class="{ 'is-logged-in': isDashboard }">
     <nav class="navbar glass">
       <div class="nav-content">
-        <router-link to="/" class="logo">
+        <router-link to="/" class="logo" @click="closeMobileMenu">
           <Rocket class="logo-icon" :size="24" />
           <span>{{ appName }}</span>
         </router-link>
-        <div class="nav-links">
-          <router-link to="/features" class="nav-link">Features</router-link>
-          <router-link to="/pricing" class="nav-link">Pricing</router-link>
-          <router-link to="/docs" class="nav-link">Docs</router-link>
+
+        <!-- Mobile Menu Trigger -->
+        <button v-if="!isDashboard" class="mobile-menu-btn" @click="showMobileMenu = !showMobileMenu">
+          <Menu v-if="!showMobileMenu" :size="24" />
+          <X v-else :size="24" />
+        </button>
+
+        <div class="nav-links" :class="{ 'mobile-open': showMobileMenu }">
+          <router-link to="/features" class="nav-link" @click="closeMobileMenu">Features</router-link>
+          <router-link to="/pricing" class="nav-link" @click="closeMobileMenu">Pricing</router-link>
+          <router-link to="/docs" class="nav-link" @click="closeMobileMenu">Docs</router-link>
           
           <div v-if="authStore.session" class="account-dropdown-wrapper">
             <button @click="showDropdown = !showDropdown" class="account-trigger glass" :class="{ active: showDropdown }">
@@ -58,7 +70,7 @@ const isDashboard = computed(() => {
             </button>
             
             <transition name="dropdown">
-              <div v-if="showDropdown" class="dropdown-menu glass" @mouseleave="showDropdown = false">
+              <div v-if="showDropdown" class="dropdown-menu" @mouseleave="showDropdown = false">
                 <div class="dropdown-header">
                   <span class="dropdown-label">Account</span>
                   <span class="dropdown-email">{{ authStore.session.user.email }}</span>
@@ -66,17 +78,17 @@ const isDashboard = computed(() => {
                 
                 <div class="dropdown-divider"></div>
                 
-                <router-link to="/profile" class="dropdown-item" @click="showDropdown = false">
+                <router-link to="/profile" class="dropdown-item" @click="showDropdown = false; closeMobileMenu()">
                   <User :size="18" />
                   <span>Account Settings</span>
                 </router-link>
                 
-                <router-link to="/moderate" class="dropdown-item" @click="showDropdown = false">
+                <router-link to="/moderate" class="dropdown-item" @click="showDropdown = false; closeMobileMenu()">
                   <Shield :size="18" />
                   <span>Moderate</span>
                 </router-link>
                 
-                <router-link v-if="authStore.profile?.role === 'admin'" to="/admin/users" class="dropdown-item admin" @click="showDropdown = false">
+                <router-link v-if="authStore.profile?.role === 'admin'" to="/admin/users" class="dropdown-item admin" @click="showDropdown = false; closeMobileMenu()">
                   <Settings :size="18" />
                   <span>Admin Panel</span>
                 </router-link>
@@ -91,7 +103,7 @@ const isDashboard = computed(() => {
             </transition>
           </div>
           <div v-else class="auth-btns">
-            <router-link to="/signup" class="btn-primary btn-sm">Join {{ appName }}</router-link>
+            <router-link to="/signup" class="btn-primary btn-sm" @click="closeMobileMenu">Join {{ appName }}</router-link>
           </div>
         </div>
       </div>
@@ -260,11 +272,12 @@ const isDashboard = computed(() => {
   right: 0;
   width: 240px;
   padding: 8px;
-  z-index: 1000;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  z-index: 9999;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
   transform-origin: top right;
-  background: #111111 !important; /* Solid background to prevent transparency issues */
-  border: 1px solid var(--border-color);
+  background: #0d0d0d !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
 }
 
 .dropdown-header {
@@ -423,8 +436,77 @@ const isDashboard = computed(() => {
 }
 
 @media (max-width: 768px) {
-  .nav-links {
-    gap: 16px;
+  .nav-content {
+    padding: 12px 16px;
   }
+
+  .mobile-menu-btn {
+    display: flex;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    z-index: 1002;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(5, 5, 5, 0.95);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    justify-content: center;
+    gap: 32px;
+    padding: 80px 24px;
+    transform: translateY(-100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+  }
+
+  .nav-links.mobile-open {
+    transform: translateY(0);
+  }
+
+  .nav-link {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .auth-btns {
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .auth-btns .btn-primary {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+  }
+
+  .account-dropdown-wrapper {
+    width: 100%;
+  }
+
+  .account-trigger {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .dropdown-menu {
+    position: static;
+    width: 100%;
+    transform: none;
+    margin-top: 12px;
+    box-shadow: none;
+    background: rgba(255, 255, 255, 0.03) !important;
+  }
+}
+
+.mobile-menu-btn {
+  display: none;
 }
 </style>
