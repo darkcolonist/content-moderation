@@ -137,28 +137,21 @@ const isActive = (path) => route.path === path
 .dashboard-layout {
   display: flex;
   height: 100%;
+  min-height: 0;
   width: 100%;
   background: transparent;
 }
 
 .sidebar {
   width: 260px;
-  height: calc(100vh - 80px); /* Default for landing page if sidebar is used */
+  max-height: 100%;
   margin: 10px;
   display: flex;
   flex-direction: column;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1001;
   border-radius: 20px;
-}
-
-/* Specific condensed height for dashboard structure */
-.dashboard-layout .sidebar {
-  height: calc(100vh - 66px); /* 50px navbar + 16px margins */
-}
-
-.is-logged-in .sidebar {
-  height: calc(100vh - 60px); /* Adjusted for shorter navbar */
+  overflow: hidden;
 }
 
 .mobile-header {
@@ -397,9 +390,9 @@ const isActive = (path) => route.path === path
 
 .dashboard-content {
   flex: 1;
+  min-height: 0;
   padding: 10px;
   overflow-y: auto;
-  height: calc(100vh - 66px); /* Match sidebar height and shorter nav */
 }
 
 .sidebar.collapsed .nav-item {

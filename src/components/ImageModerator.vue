@@ -77,12 +77,29 @@ const handleModerate = async () => {
     
     const { data: { user } } = await supabase.auth.getUser()
     
-    // Call the Supabase Edge Function
+    // Fetch user's API key (get the first one, preferably the default)
+    const { data: apiKeys, error: apiKeyError } = await supabase
+      .from('api_keys')
+      .select('api_key')
+      .eq('user_id', user.id)
+      .eq('is_revoked', false)
+      .limit(1)
+      .single()
+    
+    if (apiKeyError || !apiKeys) {
+      toast.error('No API key found. Please create an API key first.')
+      loading.value = false
+      return
+    }
+    
+    // Call the Supabase Edge Function with API key
     const { data, error } = await supabase.functions.invoke('moderate-image', {
+      headers: {
+        'x-api-key': apiKeys.api_key
+      },
       body: { 
         imageUrl: imageUrl.value, 
-        tasks: selectedTasks.value.join(','),
-        userId: user.id
+        tasks: selectedTasks.value.join(',')
       }
     })
 
