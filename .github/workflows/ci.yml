@@ -9,12 +9,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-
     steps:
     - uses: actions/checkout@v4
+
+    - name: Create .env file
+      env:
+        SECRETS_CONTEXT: ${{ toJSON(secrets) }}
+        VARS_CONTEXT: ${{ toJSON(vars) }}
+      run: |
+        echo "$SECRETS_CONTEXT" | jq -r 'to_entries[] | select(.key | startswith("VITE_")) | "\(.key)=\(.value)"' > .env
+        echo "$VARS_CONTEXT" | jq -r 'to_entries[] | select(.key | startswith("VITE_")) | "\(.key)=\(.value)"' >> .env
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
