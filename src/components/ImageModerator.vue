@@ -14,6 +14,21 @@ const fileInput = ref(null)
 const uploadLoading = ref(false)
 const activeApiKey = ref(null)
 const isInitializingKey = ref(true)
+const isValidUrl = ref(false)
+
+const validateCurrentUrl = (url) => {
+  if (!url) return false
+  try {
+    const parsed = new URL(url)
+    return ['http:', 'https:'].includes(parsed.protocol)
+  } catch (e) {
+    return false
+  }
+}
+
+watch(imageUrl, (newUrl) => {
+  isValidUrl.value = validateCurrentUrl(newUrl)
+}, { immediate: true })
 
 const tasks = [
   { id: 'porn_moderation', label: 'Pornography', active: true },
@@ -23,14 +38,10 @@ const tasks = [
   { id: 'weapon_moderation', label: 'Weapons', active: true },
 ]
 
-const selectedTasks = ref(tasks.filter(t => t.active).map(t => t.id))
+const selectedTasks = ref([])
 
 const toggleTask = (taskId) => {
-  if (selectedTasks.value.includes(taskId)) {
-    selectedTasks.value = selectedTasks.value.filter(id => id !== taskId)
-  } else {
-    selectedTasks.value.push(taskId)
-  }
+  selectedTasks.value = [taskId]
 }
 
 const resizeImage = (file, targetSizeKB = 300) => {
@@ -301,6 +312,7 @@ const triggerFileInput = () => {
 
 const loadHistoryItem = (item) => {
   imageUrl.value = item.image_url
+  isValidUrl.value = validateCurrentUrl(item.image_url)
   result.value = {
     final_decision: item.final_decision,
     confidence_score_decision: item.confidence_score,
@@ -349,7 +361,7 @@ onMounted(() => {
       <!-- Left Column: Input & Controls -->
       <div class="moderator-card glass">
         <div class="drop-zone" 
-          :class="{ 'dragging': isDragging, 'uploading': uploadLoading }"
+          :class="{ 'dragging': isDragging, 'uploading': uploadLoading, 'has-preview': imageUrl }"
           @drop="handleDrop"
           @dragover="handleDragOver"
           @dragleave="handleDragLeave"
@@ -365,6 +377,13 @@ onMounted(() => {
           <template v-if="uploadLoading">
             <Loader2 :size="48" class="drop-icon animate-spin" />
             <h3>Uploading Image...</h3>
+          </template>
+          <template v-else-if="imageUrl">
+            <img :src="imageUrl" class="preview-image" alt="Preview" />
+            <div class="preview-overlay">
+              <Upload :size="24" />
+              <span>Change Image</span>
+            </div>
           </template>
           <template v-else>
             <Upload :size="48" class="drop-icon" />
@@ -401,7 +420,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <button @click="handleModerate" :disabled="loading || !imageUrl" class="btn-primary btn-large">
+        <button @click="handleModerate" :disabled="loading || !isValidUrl || selectedTasks.length === 0" class="btn-primary btn-large">
           <Loader2 v-if="loading" class="animate-spin" :size="20" />
           <Shield v-else :size="20" />
           <span>{{ loading ? 'Analyzing...' : 'Moderate Image' }}</span>
@@ -423,14 +442,14 @@ onMounted(() => {
           </div>
 
           <div class="detailed-results">
-            <div v-for="(val, key) in result" :key="key">
+            <template v-for="(val, key) in result" :key="key">
               <div v-if="key.includes('_moderation') && typeof val === 'object'" class="sub-task-result">
                 <span class="sub-task-label">{{ key.replace('_moderation', '').toUpperCase() }}</span>
-                <span class="sub-task-status" :class="{ 'ko': val[key.replace('_moderation', '_content')] }">
+                <span class="sub-task-status" :class="{ 'flagged': val[key.replace('_moderation', '_content')] }">
                   {{ val[key.replace('_moderation', '_content')] ? 'REJECTED' : 'PASSED' }}
                 </span>
               </div>
-            </div>
+            </template>
           </div>
         </div>
       </div>
@@ -456,7 +475,7 @@ onMounted(() => {
             <div class="history-image">
               <img :src="item.image_url" :alt="item.media_id" />
               <div class="history-overlay">
-                <span class="history-decision" :class="item.final_decision === 'OK' ? 'ok' : 'ko'">
+                <span class="history-decision" :class="item.final_decision === 'OK' ? 'ok' : 'flagged'">
                   {{ item.final_decision }}
                 </span>
               </div>
@@ -583,6 +602,43 @@ onMounted(() => {
   font-size: 0.9rem;
 }
 
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  max-height: 250px;
+}
+
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 14px;
+}
+
+.drop-zone:hover .preview-overlay {
+  opacity: 1;
+}
+
+.drop-zone.has-preview {
+  padding: 12px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
 .url-input-section label {
   display: block;
   margin-bottom: 8px;
@@ -685,7 +741,7 @@ onMounted(() => {
   color: #10b981;
 }
 
-.result-header.KO {
+.result-header.FLAGGED {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
 }
@@ -733,7 +789,7 @@ onMounted(() => {
   color: #10b981;
 }
 
-.sub-task-status.ko {
+.sub-task-status.flagged {
   color: #ef4444;
 }
 

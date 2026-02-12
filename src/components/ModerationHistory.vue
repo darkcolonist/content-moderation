@@ -128,7 +128,7 @@ const getConfidenceColor = (score) => {
           <select v-model="filterStatus">
             <option value="all">All Decisions</option>
             <option value="OK">OK Only</option>
-            <option value="KO">KO Only</option>
+            <option value="FLAGGED">FLAGGED Only</option>
           </select>
         </div>
       </div>

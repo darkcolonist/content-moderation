@@ -92,7 +92,7 @@ onMounted(() => {
     <div class="standard-card glass">
       <div class="header-centered">
         <h1 class="gradient-text">{{ isRegister ? 'Join the Future' : 'Welcome Back' }}</h1>
-        <p class="text-secondary">{{ isRegister ? 'Sign up with your Gmail account to get started with 3 free tokens' : 'Sign in to your account to continue' }}</p>
+        <p class="text-secondary">{{ isRegister ? 'Sign up with your Gmail account to get started' : 'Sign in to your account to continue' }}</p>
       </div>
 
       <!-- Special Offer Banner (Signup Only) -->

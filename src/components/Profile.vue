@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
-import { LogOut, User, Mail, ShieldCheck, Sparkles, ShieldAlert, Coins, Ban, Loader2, KeyRound, Save } from 'lucide-vue-next'
+import { LogOut, User, Mail, ShieldCheck, Sparkles, ShieldAlert, Coins, Ban, Loader2, KeyRound, Save, RotateCcw } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
 import { authStore } from '../lib/authStore'
@@ -11,9 +11,7 @@ const newPassword = ref('')
 const confirmPassword = ref('')
 
 onMounted(async () => {
-  if (!authStore.profile) {
-    await authStore.fetchProfile()
-  }
+  await authStore.fetchProfile(true)
 })
 
 const handleUpdatePassword = async () => {
@@ -98,7 +96,12 @@ const handleSignOut = async () => {
                 </div>
                 <div class="info-content">
                   <span class="label">Available Tokens</span>
-                  <span class="value">{{ authStore.profile?.tokens || 0 }}</span>
+                  <div class="token-value-row">
+                    <span class="value">{{ authStore.profile?.tokens || 0 }}</span>
+                    <button @click="authStore.fetchProfile(true)" class="inline-refresh-btn" :disabled="authStore.loading">
+                      <RotateCcw :size="12" :class="{ 'animate-spin': authStore.loading }" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -254,6 +257,38 @@ const handleSignOut = async () => {
   font-size: 0.9rem;
   font-weight: 500;
   color: white;
+}
+
+.token-value-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inline-refresh-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.inline-refresh-btn:hover {
+  color: var(--primary-color);
+  background: var(--glass-bg);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .status-pill {

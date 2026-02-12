@@ -12,7 +12,9 @@ import {
   ChevronRight,
   Menu,
   X,
-  KeyRound
+  KeyRound,
+  Coins,
+  RotateCcw
 } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -81,6 +83,27 @@ const isActive = (path) => route.path === path
         <button v-if="isMobileOpen" @click="closeMobile" class="mobile-close-btn">
           <X :size="20" />
         </button>
+      </div>
+
+      <div class="sidebar-balance" v-if="authStore.profile">
+        <div class="balance-card">
+          <div class="balance-info">
+            <Coins :size="16" class="coin-icon" />
+            <span v-if="!isCollapsed || isMobileOpen" class="balance-label">Token Balance</span>
+          </div>
+          <div class="balance-value-row">
+            <span class="balance-amount">{{ authStore.profile.tokens || 0 }}</span>
+            <button 
+              v-if="!isCollapsed || isMobileOpen" 
+              @click="authStore.fetchProfile(true)" 
+              class="refresh-btn"
+              :class="{ 'animate-spin': authStore.loading }"
+              title="Refresh Balance"
+            >
+              <RotateCcw :size="14" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <nav class="sidebar-nav">
@@ -342,6 +365,78 @@ const isActive = (path) => route.path === path
   flex-direction: column;
   gap: 24px;
   overflow-y: auto;
+}
+
+.sidebar-balance {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.balance-card {
+  background: var(--surface-hover);
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar.collapsed .balance-card {
+  padding: 8px;
+  align-items: center;
+}
+
+.balance-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.coin-icon {
+  color: #fbbf24;
+}
+
+.balance-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.balance-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.balance-amount {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+}
+
+.refresh-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.refresh-btn:hover {
+  color: var(--primary-color);
+  background: var(--glass-bg);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 .nav-section {

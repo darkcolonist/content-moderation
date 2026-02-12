@@ -98,10 +98,19 @@ serve(async (req: Request) => {
 
     const result = await response.json()
 
-    // 6. If PicPurify was successful (moderation result returned), deduct token
+    // Transform 'KO' to 'FLAGGED' for consistency
+    if (result.final_decision === 'KO') {
+      result.final_decision = 'FLAGGED'
+    }
+
+    // 6. If PicPurify was successful (moderation result returned), deduct tokens based on task count
     if (result.status === 'success') {
+      const taskList = (tasks || 'porn_moderation,suggestive_nudity_moderation,gore_moderation,drug_moderation,weapon_moderation').split(',')
+      const taskCount = taskList.length
+
       const { error: deductError } = await supabase.rpc('deduct_user_token', {
-        p_user_id: userId
+        p_user_id: userId,
+        p_amount: taskCount
       })
       if (deductError) console.error('Token deduction error:', deductError)
     }

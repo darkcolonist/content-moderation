@@ -21,7 +21,7 @@ import { appName, contactEmail } from '../lib/supabase'
         <p class="tier-desc">Perfect for small projects and individual developers.</p>
         <ul class="benefit-list">
           <li><Check :size="16" /> 200 Tokens</li>
-          <li><Check :size="16" /> 1 Token = 1 Image</li>
+          <li><Check :size="16" /> 1 Token = 1 Task</li>
           <li><Check :size="16" /> Never Expires</li>
           <li><Check :size="16" /> Max 5 API Keys</li>
           <li><Check :size="16" /> Full Dashboard Access</li>
@@ -41,7 +41,7 @@ import { appName, contactEmail } from '../lib/supabase'
         <p class="tier-desc">Ideal for high-traffic apps requiring reliable safety.</p>
         <ul class="benefit-list">
           <li><Check :size="16" /> 1,200 Tokens</li>
-          <li><Check :size="16" /> 1 Token = 1 Image</li>
+          <li><Check :size="16" /> 1 Token = 1 Task</li>
           <li><Check :size="16" /> Never Expires</li>
           <li><Check :size="16" /> Max 5 API Keys</li>
           <li><Check :size="16" /> Full Dashboard Access</li>
@@ -82,7 +82,7 @@ import { appName, contactEmail } from '../lib/supabase'
       <div class="faq-grid">
         <div class="faq-item">
           <h4>What counts as a "token"?</h4>
-          <p>Each individual image sent to our API for moderation costs exactly 1 token.</p>
+          <p>Each moderation task conducted on an image costs exactly 1 token. For example, checking one image for both pornography and nudity counts as 2 tokens.</p>
         </div>
         <div class="faq-item">
           <h4>Do tokens expire?</h4>
