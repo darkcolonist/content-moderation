@@ -260,7 +260,6 @@ const showcaseImages = [
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 16px;
-  overflow-x: hidden;
 }
 
 @media (min-width: 768px) {
