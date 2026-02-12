@@ -1,7 +1,80 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import { Rocket, Shield, Zap, CheckCircle, ArrowRight, Star } from 'lucide-vue-next'
+import { Rocket, Shield, Zap, CheckCircle, ArrowRight, Star, Eye, AlertTriangle, ShieldCheck } from 'lucide-vue-next'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Autoplay, Pagination, EffectCoverflow } from 'swiper/modules'
 import { appName } from '../lib/supabase'
+
+// Import Swiper styles
+import 'swiper/css'
+import 'swiper/css/pagination'
+import 'swiper/css/effect-coverflow'
+
+const modules = [Autoplay, Pagination, EffectCoverflow]
+
+const showcaseImages = [
+  {
+    url: '/assets/showcase/sample1.jpg',
+    decision: 'OK',
+    confidence: 0.999,
+    tasks: {
+      porn_moderation: '0.001',
+      gore_moderation: '0.001',
+      weapon_moderation: '0.002'
+    }
+  },
+  {
+    url: '/assets/showcase/sample2.jpg',
+    decision: 'OK',
+    confidence: 0.995,
+    tasks: {
+      face_detection: '0.998',
+      face_gender_detection: '0.995',
+      face_age_detection: '0.992'
+    }
+  },
+  {
+    url: '/assets/showcase/sample3.jpg',
+    decision: 'OK',
+    confidence: 0.982,
+    tasks: {
+      weapon_moderation: '0.015',
+      money_moderation: '0.005',
+      qr_code_moderation: '0.002'
+    }
+  },
+  {
+    url: '/assets/showcase/sample4.jpg',
+    decision: 'OK',
+    confidence: 0.997,
+    tasks: {
+      drug_moderation: '0.002',
+      obscene_gesture_moderation: '0.001',
+      hate_sign_moderation: '0.001'
+    }
+  },
+  {
+    url: '/assets/showcase/sample5.jpg',
+    decision: 'OK',
+    confidence: 0.965,
+    tasks: {
+      drug_moderation: '0.042',
+      gore_moderation: '0.035',
+      hate_sign_moderation: '0.012'
+    }
+  },
+  {
+    url: '/assets/showcase/sample6.jpg',
+    decision: 'FLAGGED',
+    confidence: 0.921,
+    reason: 'Suggestive Content',
+    tasks: {
+      suggestive_nudity_moderation: '0.824',
+      porn_moderation: '0.052',
+      obscene_gesture_moderation: '0.012'
+    }
+  }
+]
 </script>
 
 <template>
@@ -83,6 +156,84 @@ import { appName } from '../lib/supabase'
         <div class="floating-icon icon-2 glass"><Zap :size="32" /></div>
         <div class="floating-icon icon-3 glass"><Star :size="32" /></div>
       </div>
+    </section>
+
+    <!-- Showcase Section -->
+    <section class="showcase-section">
+      <div class="section-header">
+        <h2 class="gradient-text h2">Moderation in Action</h2>
+        <p class="text-secondary">See how our AI analyzes and categorizes images in real-time.</p>
+      </div>
+
+      <swiper
+        :modules="modules"
+        :slides-per-view="1"
+        :space-between="30"
+        :centered-slides="true"
+        :loop="true"
+        :autoplay="{
+          delay: 3500,
+          disableOnInteraction: false,
+        }"
+        :effect="'coverflow'"
+        :coverflow-effect="{
+          rotate: 5,
+          stretch: 0,
+          depth: 100,
+          modifier: 2,
+          slideShadows: false,
+        }"
+        :pagination="{ clickable: true }"
+        :breakpoints="{
+          '768': { slidesPerView: 2 },
+          '1024': { slidesPerView: 3 }
+        }"
+        class="moderation-swiper"
+      >
+        <swiper-slide v-for="(img, index) in showcaseImages" :key="index">
+          <div class="showcase-card glass">
+            <div class="image-container">
+              <img :src="img.url" alt="Moderated Sample" />
+              <div v-if="img.decision === 'FLAGGED'" class="overlay ko">
+                <AlertTriangle :size="48" />
+                <span>FLAGGED</span>
+              </div>
+              <div v-else-if="img.decision === 'WARNING'" class="overlay warning">
+                <AlertTriangle :size="48" />
+                <span>WARNING</span>
+              </div>
+              <div v-else class="overlay ok">
+                <ShieldCheck :size="48" />
+                <span>SAFE</span>
+              </div>
+            </div>
+            <div class="card-details">
+              <div class="result-header">
+                <span class="decision-badge" :class="{
+                  'badge-ok': img.decision === 'OK',
+                  'badge-ko': img.decision === 'FLAGGED',
+                  'badge-warning': img.decision === 'WARNING'
+                }">
+                  {{ img.decision }}
+                </span>
+                <span class="confidence">Confidence: {{ (img.confidence * 100).toFixed(1) }}%</span>
+              </div>
+              <div class="task-results">
+                <div v-for="(score, task) in img.tasks" :key="task" class="task-item">
+                  <span class="task-name">{{ task.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}</span>
+                  <div class="task-progress">
+                    <div class="task-fill" :style="{ width: (parseFloat(score) * 100) + '%' }" :class="parseFloat(score) > 0.5 ? 'danger-fill' : 'safe-fill'"></div>
+                  </div>
+                  <span class="task-score">{{ (parseFloat(score) * 100).toFixed(1) }}%</span>
+                </div>
+              </div>
+              <div v-if="img.reason" class="reason-tag">
+                <Eye :size="14" /> {{ img.reason }}
+              </div>
+            </div>
+          </div>
+        </swiper-slide>
+      </swiper>
     </section>
 
     <!-- Stats Section -->
@@ -247,6 +398,166 @@ import { appName } from '../lib/supabase'
   100% { transform: translateY(0); }
 }
 
+/* Showcase Section */
+.showcase-section {
+  margin-bottom: 120px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.section-header h2 {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.moderation-swiper {
+  padding: 40px 0 80px; /* Increased bottom padding for visible dots */
+}
+
+/* Swiper Pagination Customization */
+:deep(.swiper-pagination-bullet) {
+  background: rgba(255, 255, 255, 0.2);
+  width: 10px;
+  height: 10px;
+  opacity: 1;
+  transition: all 0.3s ease;
+}
+
+:deep(.swiper-pagination-bullet-active) {
+  background: var(--primary-color) !important;
+  width: 30px;
+  border-radius: 5px;
+  box-shadow: 0 0 15px var(--primary-color);
+}
+
+.showcase-card {
+  height: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease;
+}
+
+.image-container {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+}
+
+.image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.showcase-card:hover .image-container img {
+  transform: scale(1.05);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-weight: 800;
+  font-size: 1.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.showcase-card:hover .overlay {
+  opacity: 1;
+}
+
+.overlay.ko { background: rgba(239, 68, 68, 0.4); color: white; }
+.overlay.warning { background: rgba(245, 158, 11, 0.4); color: white; }
+.overlay.ok { background: rgba(16, 185, 129, 0.4); color: white; }
+
+.card-details {
+  padding: 24px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.decision-badge {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.badge-ok { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge-ko { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.badge-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+.confidence {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.task-results {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task-item {
+  display: grid;
+  grid-template-columns: 80px 1fr 40px;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.task-name { text-transform: capitalize; color: var(--text-secondary); }
+
+.task-progress {
+  height: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.task-fill { height: 100%; border-radius: 2px; }
+.safe-fill { background: #10b981; }
+.danger-fill { background: #ef4444; }
+
+.task-score { text-align: right; color: var(--text-secondary); }
+
+.reason-tag {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
 /* Stats */
 .stats-grid {
   display: grid;
@@ -269,6 +580,7 @@ import { appName } from '../lib/supabase'
   .hero-actions { justify-content: center; }
   .trust-indicators { justify-content: center; }
   .hero-visual { max-width: 500px; margin: 0 auto; }
+  .section-header h2 { font-size: 2.5rem; }
 }
 
 @media (max-width: 768px) {

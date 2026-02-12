@@ -12,6 +12,7 @@ const showDropdown = ref(false)
 const router = useRouter()
 
 onMounted(() => {
+  document.title = `${appName} | Premium Content Intelligence`
   // Watch for session changes to handle sign-out redirection
   watch(() => authStore.session, (newSession) => {
     if (!newSession) {
@@ -90,7 +91,7 @@ const isDashboard = computed(() => {
             </transition>
           </div>
           <div v-else class="auth-btns">
-            <router-link to="/signup" class="btn-primary btn-sm">Join Nova</router-link>
+            <router-link to="/signup" class="btn-primary btn-sm">Join {{ appName }}</router-link>
           </div>
         </div>
       </div>

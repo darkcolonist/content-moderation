@@ -1,5 +1,6 @@
 <script setup>
 import { Check, ArrowRight } from 'lucide-vue-next'
+import { appName } from '../lib/supabase'
 </script>
 
 <template>
@@ -64,7 +65,7 @@ import { Check, ArrowRight } from 'lucide-vue-next'
           <li><Check :size="16" /> SLA & Legal Guarantees</li>
           <li><Check :size="16" /> On-premise options</li>
         </ul>
-        <a href="mailto:sales@novamoderation.com" class="btn-secondary text-center-btn">Contact Sales</a>
+        <a :href="`mailto:sales@${appName.toLowerCase().replace(/\s/g, '')}.com`" class="btn-secondary text-center-btn">Contact Sales</a>
       </div>
     </div>
 

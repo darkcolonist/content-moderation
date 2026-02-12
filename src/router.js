@@ -105,8 +105,12 @@ router.beforeEach(async (to, from, next) => {
     }
 })
 
-router.afterEach(() => {
+import { appName } from './lib/supabase'
+
+router.afterEach((to) => {
     NProgress.done()
+    const pageName = to.name ? to.name.charAt(0).toUpperCase() + to.name.slice(1) : ''
+    document.title = pageName ? `${pageName} | ${appName}` : appName
 })
 
 export default router

@@ -22,6 +22,7 @@ A premium content moderation suite built with Vue 3, Vite, and Supabase.
    ```env
    VITE_SUPABASE_URL=your_project_url
    VITE_SUPABASE_ANON_KEY=your_anon_key
+   VITE_APP_NAME=NovaModeration # Optional: Defaults to NovaModeration
    ```
 
 3. **Development**:

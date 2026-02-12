@@ -1,5 +1,6 @@
 <script setup>
 import { Book, Terminal, MessageSquare } from 'lucide-vue-next'
+import { appName } from '../lib/supabase'
 </script>
 
 <template>
@@ -28,12 +29,12 @@ import { Book, Terminal, MessageSquare } from 'lucide-vue-next'
         <header class="content-header">
           <span class="breadcrumb">Docs / Getting Started</span>
           <h1 class="gradient-text">Introduction</h1>
-          <p class="text-secondary lead">Welcome to the NovaModeration API documentation. Learn how to integrate our AI safety tools into your application.</p>
+          <p class="text-secondary lead">Welcome to the {{ appName }} API documentation. Learn how to integrate our AI safety tools into your application.</p>
         </header>
 
         <section class="docs-section">
           <h2>Overview</h2>
-          <p class="text-secondary">NovaModeration provides a robust set of REST APIs for real-time content analysis. Whether you're building a social network, an e-commerce platform, or a private community, our tools help you maintain safety standards at scale.</p>
+          <p class="text-secondary">{{ appName }} provides a robust set of REST APIs for real-time content analysis. Whether you're building a social network, an e-commerce platform, or a private community, our tools help you maintain safety standards at scale.</p>
           
           <div class="info-box glass">
             <Book :size="20" />
@@ -50,7 +51,7 @@ import { Book, Terminal, MessageSquare } from 'lucide-vue-next'
               <span>Example Request</span>
               <Terminal :size="14" />
             </div>
-            <pre class="code-content"><code>curl -X POST https://api.novamode.ai/v1/image \
+            <pre class="code-content"><code>curl -X POST https://api.yourdomain.com/v1/image \
   -H "X-API-KEY: YOUR_API_KEY" \
   -F "image=@photo.jpg"</code></pre>
           </div>
