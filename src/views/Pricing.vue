@@ -21,7 +21,7 @@ import { appName } from '../lib/supabase'
         </div>
         <p class="tier-desc">Ideal for small platforms and growing communities.</p>
         <ul class="benefit-list">
-          <li><Check :size="16" /> 10,000 requests /mo</li>
+          <li><Check :size="16" /> 2,000 images /mo</li>
           <li><Check :size="16" /> Standard Image Moderation</li>
           <li><Check :size="16" /> Email Support</li>
           <li><Check :size="16" /> 2 API Keys</li>
@@ -41,7 +41,7 @@ import { appName } from '../lib/supabase'
         </div>
         <p class="tier-desc">For high-traffic platforms requiring advanced safety.</p>
         <ul class="benefit-list">
-          <li><Check :size="16" /> 100,000 requests /mo</li>
+          <li><Check :size="16" /> 20,000 images /mo</li>
           <li><Check :size="16" /> Advanced AI Moderation</li>
           <li><Check :size="16" /> Priority Discord Support</li>
           <li><Check :size="16" /> Unlimited API Keys</li>
