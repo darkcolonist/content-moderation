@@ -3,15 +3,31 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const PICPURIFY_API_URL = "https://www.picpurify.com/analyse/1.1"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
-}
-
 serve(async (req: Request) => {
-  // Handle CORS
+  const allowedOriginsRaw = Deno.env.get('ALLOWED_ORIGINS') || 'http://localhost:5173,http://127.0.0.1:5173'
+  const ALLOWED_ORIGINS = allowedOriginsRaw.split(',').map(o => o.trim())
+
+  const origin = req.headers.get('Origin')
+  const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin)
+
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+  }
+
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // Optional: Strictly block unauthorized origins for non-OPTIONS requests
+  if (origin && !isAllowedOrigin) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 403,
+    })
   }
 
   try {

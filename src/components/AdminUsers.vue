@@ -379,25 +379,6 @@ watch([allUsers, searchQuery], () => {
   gap: 8px;
 }
 
-.btn-icon {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface-hover);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-icon:hover {
-  background: var(--border-color);
-  color: white;
-}
-
 .btn-icon.danger:hover {
   background: rgba(244, 63, 94, 0.1);
   border-color: var(--accent-color);

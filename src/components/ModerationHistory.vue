@@ -7,10 +7,11 @@ import {
   ShieldCheck, 
   ShieldAlert, 
   Clock, 
-  Image as ImageIcon, 
+  ImageIcon, 
   ExternalLink,
   Search,
-  Filter
+  Filter,
+  Braces
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -32,9 +33,13 @@ const filterStatus = ref('all')
 const fetchHistory = async () => {
   loading.value = true
   try {
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
     let query = supabase
       .from('moderation_history')
       .select('*, profiles(email)')
+      .gte('created_at', thirtyDaysAgo.toISOString())
       .order('created_at', { ascending: false })
 
     // If not admin view, filter by current user's ID
@@ -190,7 +195,7 @@ const getConfidenceColor = (score) => {
             </td>
             <td>
               <button class="btn-icon small" title="View Raw JSON" @click="viewRawJson(item)">
-                <ImageIcon :size="14" />
+                <Braces :size="14" />
               </button>
             </td>
           </tr>
@@ -328,11 +333,6 @@ const getConfidenceColor = (score) => {
 .text-success { color: #10b981; }
 .text-warning { color: #f59e0b; }
 .text-danger { color: #ef4444; }
-
-.btn-icon.small {
-  width: 28px;
-  height: 28px;
-}
 
 .loading-state, .empty-state {
   display: flex;

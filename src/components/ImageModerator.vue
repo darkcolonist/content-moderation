@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { supabase } from '../lib/supabase'
-import { Shield, Upload, Loader2, CheckCircle2, AlertTriangle, Clock, Image as ImageIcon } from 'lucide-vue-next'
+import { Shield, Upload, Loader2, CheckCircle2, AlertTriangle, Clock, Image as ImageIcon, KeyRound } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authStore } from '../lib/authStore'
 
@@ -10,6 +10,10 @@ const loading = ref(false)
 const result = ref(null)
 const recentHistory = ref([])
 const isDragging = ref(false)
+const fileInput = ref(null)
+const uploadLoading = ref(false)
+const activeApiKey = ref(null)
+const isInitializingKey = ref(true)
 
 const tasks = [
   { id: 'porn_moderation', label: 'Pornography', active: true },
@@ -29,6 +33,62 @@ const toggleTask = (taskId) => {
   }
 }
 
+const resizeImage = (file, targetSizeKB = 300) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (event) => {
+      const img = new Image()
+      img.src = event.target.result
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+
+        // Calculate aspect ratio
+        const maxDimension = 2048
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width)
+            width = maxDimension
+          } else {
+            width = Math.round((width * maxDimension) / height)
+            height = maxDimension
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // Adjust quality to hit target size
+        let quality = 0.8
+        let dataUrl = canvas.toDataURL('image/jpeg', quality)
+        
+        // Iterative compression if needed (simplified)
+        if (dataUrl.length > targetSizeKB * 1024 * 1.33) { // 1.33 for base64 overhead
+          quality = 0.6
+          dataUrl = canvas.toDataURL('image/jpeg', quality)
+        }
+
+        // Convert dataURL back to Blob
+        const arr = dataUrl.split(',')
+        const mime = arr[0].match(/:(.*?);/)[1]
+        const bstr = atob(arr[1])
+        let n = bstr.length
+        const u8arr = new Uint8Array(n)
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n)
+        }
+        resolve(new Blob([u8arr], { type: mime }))
+      }
+      img.onerror = (err) => reject(err)
+    }
+    reader.onerror = (err) => reject(err)
+  })
+}
+
 const validateImageSize = (url) => {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -46,12 +106,55 @@ const validateImageSize = (url) => {
   })
 }
 
+const fetchApiKey = async () => {
+  isInitializingKey.value = true
+  try {
+    let userId = authStore.session?.user?.id
+    
+    if (!userId) {
+      const { data: { user } } = await supabase.auth.getUser()
+      userId = user?.id
+    }
+
+    if (!userId) {
+      isInitializingKey.value = false
+      return
+    }
+
+    const { data: apiKeys, error } = await supabase
+      .from('api_keys')
+      .select('api_key')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+    
+    if (error) throw error
+    if (apiKeys && apiKeys.length > 0) {
+      activeApiKey.value = apiKeys[0].api_key
+    }
+  } catch (err) {
+    console.error('Error fetching API key:', err)
+  } finally {
+    isInitializingKey.value = false
+  }
+}
+
+watch(() => authStore.session, async (newSession) => {
+  if (newSession?.user?.id) {
+    await fetchApiKey()
+  }
+}, { immediate: true })
+
 const fetchRecentHistory = async () => {
   try {
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
     const { data, error } = await supabase
       .from('moderation_history')
       .select('*')
       .eq('user_id', authStore.session?.user.id)
+      .gte('created_at', thirtyDaysAgo.toISOString())
       .order('created_at', { ascending: false })
       .limit(5)
 
@@ -75,27 +178,20 @@ const handleModerate = async () => {
     // Validate image size first
     await validateImageSize(imageUrl.value)
     
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    // Fetch user's API key (get the first one, preferably the default)
-    const { data: apiKeys, error: apiKeyError } = await supabase
-      .from('api_keys')
-      .select('api_key')
-      .eq('user_id', user.id)
-      .eq('is_revoked', false)
-      .limit(1)
-      .single()
-    
-    if (apiKeyError || !apiKeys) {
-      toast.error('No API key found. Please create an API key first.')
-      loading.value = false
-      return
+    if (!activeApiKey.value) {
+      // Try one last time to fetch it
+      await fetchApiKey()
+      if (!activeApiKey.value) {
+        toast.error('No active API key found. Please create an API key first.')
+        loading.value = false
+        return
+      }
     }
     
     // Call the Supabase Edge Function with API key
     const { data, error } = await supabase.functions.invoke('moderate-image', {
       headers: {
-        'x-api-key': apiKeys.api_key
+        'x-api-key': activeApiKey.value
       },
       body: { 
         imageUrl: imageUrl.value, 
@@ -125,15 +221,61 @@ const handleModerate = async () => {
   }
 }
 
+const uploadFile = async (file) => {
+  if (!file) return
+  
+  // Basic pre-validation
+  if (!file.type.startsWith('image/')) {
+    toast.error('Only image files are allowed')
+    return
+  }
+
+  uploadLoading.value = true
+  try {
+    // Resize and compress image before upload
+    const processedBlob = await resizeImage(file, 300)
+    
+    const fileExt = file.name.split('.').pop() || 'jpg'
+    const fileName = `${authStore.session.user.id}/${Date.now()}.${fileExt}`
+    const filePath = `${fileName}`
+
+    const { data, error: uploadError } = await supabase.storage
+      .from('moderated-images')
+      .upload(filePath, processedBlob, {
+        contentType: 'image/jpeg'
+      })
+
+    if (uploadError) throw uploadError
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('moderated-images')
+      .getPublicUrl(filePath)
+
+    imageUrl.value = publicUrl
+    toast.success(`Image processed (${(processedBlob.size / 1024).toFixed(0)}KB) and uploaded`)
+  } catch (err) {
+    console.error('Upload error:', err)
+    toast.error('Failed to process or upload image')
+  } finally {
+    uploadLoading.value = false
+  }
+}
+
 const handleDrop = (e) => {
   e.preventDefault()
   isDragging.value = false
   
+  const files = e.dataTransfer.files
+  if (files && files.length > 0) {
+    uploadFile(files[0])
+    return
+  }
+
   const url = e.dataTransfer.getData('text/plain')
   if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
     imageUrl.value = url
   } else {
-    toast.error('Please drop a valid image URL')
+    toast.error('Please drop a valid image file or URL')
   }
 }
 
@@ -144,6 +286,17 @@ const handleDragOver = (e) => {
 
 const handleDragLeave = () => {
   isDragging.value = false
+}
+
+const handleFileSelect = (e) => {
+  const files = e.target.files
+  if (files && files.length > 0) {
+    uploadFile(files[0])
+  }
+}
+
+const triggerFileInput = () => {
+  fileInput.value.click()
 }
 
 const loadHistoryItem = (item) => {
@@ -161,6 +314,7 @@ const formatDate = (dateString) => {
 
 onMounted(() => {
   fetchRecentHistory()
+  fetchApiKey()
 })
 </script>
 
@@ -171,21 +325,52 @@ onMounted(() => {
         <Shield class="icon-accent" :size="28" />
         <h2 class="gradient-text">Image Moderator</h2>
       </div>
-      <p class="text-secondary">Enterprise-grade AI content filtering</p>
+      <div class="header-subtitle-row">
+        <p class="text-secondary">Enterprise-grade AI content filtering</p>
+        
+        <div v-if="isInitializingKey" class="active-key-badge glass">
+          <Loader2 :size="14" class="animate-spin" />
+          <span>Checking API Key...</span>
+        </div>
+        
+        <div v-else-if="activeApiKey" class="active-key-badge glass success">
+          <KeyRound :size="14" />
+          <span>Using Key: <code>{{ activeApiKey.substring(0, 10) }}••••</code></span>
+        </div>
+
+        <router-link v-else to="/api-keys" class="active-key-badge glass warning">
+          <AlertTriangle :size="14" />
+          <span>No active API key found. Create one here →</span>
+        </router-link>
+      </div>
     </div>
 
     <div class="moderator-grid">
       <!-- Left Column: Input & Controls -->
       <div class="moderator-card glass">
         <div class="drop-zone" 
-          :class="{ 'dragging': isDragging }"
+          :class="{ 'dragging': isDragging, 'uploading': uploadLoading }"
           @drop="handleDrop"
           @dragover="handleDragOver"
           @dragleave="handleDragLeave"
+          @click="triggerFileInput"
         >
-          <Upload :size="48" class="drop-icon" />
-          <h3>Drop Image URL Here</h3>
-          <p>or paste below</p>
+          <input 
+            type="file" 
+            ref="fileInput" 
+            class="hidden-file-input" 
+            @change="handleFileSelect" 
+            accept="image/*"
+          />
+          <template v-if="uploadLoading">
+            <Loader2 :size="48" class="drop-icon animate-spin" />
+            <h3>Uploading Image...</h3>
+          </template>
+          <template v-else>
+            <Upload :size="48" class="drop-icon" />
+            <h3>Drop Image or Click to Upload</h3>
+            <p>supports JPEG, PNG, WEBP (Max 5MB)</p>
+          </template>
         </div>
 
         <div class="url-input-section">
@@ -297,6 +482,50 @@ onMounted(() => {
 
 .moderator-header {
   margin-bottom: 32px;
+}
+
+.header-subtitle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.active-key-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.active-key-badge.success {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+  color: #10b981;
+}
+
+.active-key-badge.warning {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.05);
+  color: #f59e0b;
+}
+
+.active-key-badge.warning:hover {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: #f59e0b;
+}
+
+.active-key-badge code {
+  color: var(--primary-color);
+  font-family: monospace;
 }
 
 .moderator-header h2 {
@@ -425,6 +654,15 @@ onMounted(() => {
   width: 100%;
   padding: 16px;
   font-size: 1.1rem;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.drop-zone.uploading {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .result-display {

@@ -199,9 +199,8 @@ const openProfilePanel = () => {
     <!-- Background Orbs -->
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
-
-    <Toaster position="bottom-right" richColors closeButton />
   </div>
+  <Toaster position="bottom-center" theme="dark" richColors closeButton />
 </template>
 
 <style>
