@@ -10,6 +10,7 @@ import { authStore } from './lib/authStore'
 
 const showDropdown = ref(false)
 const showMobileMenu = ref(false)
+const showProfilePanel = ref(false)
 const router = useRouter()
 
 onMounted(() => {
@@ -28,6 +29,7 @@ onMounted(() => {
 const handleSignOut = async () => {
   await supabase.auth.signOut()
   showDropdown.value = false
+  showProfilePanel.value = false
 }
 
 const isDashboard = computed(() => {
@@ -36,6 +38,15 @@ const isDashboard = computed(() => {
 })
 
 const closeMobileMenu = () => {
+  showMobileMenu.value = false
+}
+
+const closeProfilePanel = () => {
+  showProfilePanel.value = false
+}
+
+const openProfilePanel = () => {
+  showProfilePanel.value = true
   showMobileMenu.value = false
 }
 </script>
@@ -49,6 +60,13 @@ const closeMobileMenu = () => {
           <span>{{ appName }}</span>
         </router-link>
 
+        <!-- Mobile: account avatar in topbar (opens slide panel) -->
+        <button v-if="!isDashboard && authStore.session" @click="openProfilePanel" class="mobile-account-btn">
+          <div class="user-avatar-mini">
+            {{ authStore.session.user.email[0].toUpperCase() }}
+          </div>
+        </button>
+
         <!-- Mobile Menu Trigger -->
         <button v-if="!isDashboard" class="mobile-menu-btn" @click="showMobileMenu = !showMobileMenu">
           <Menu v-if="!showMobileMenu" :size="24" />
@@ -60,6 +78,7 @@ const closeMobileMenu = () => {
           <router-link to="/pricing" class="nav-link" @click="closeMobileMenu">Pricing</router-link>
           <router-link to="/docs" class="nav-link" @click="closeMobileMenu">Docs</router-link>
           
+          <!-- Desktop: account dropdown -->
           <div v-if="authStore.session" class="account-dropdown-wrapper">
             <button @click="showDropdown = !showDropdown" class="account-trigger glass" :class="{ active: showDropdown }">
               <div class="user-avatar-mini">
@@ -122,6 +141,55 @@ const closeMobileMenu = () => {
     <footer class="footer" :class="{ 'footer-condensed': isDashboard }">
       <p>&copy; 2024 {{ appName }}. Built for the modern web.</p>
     </footer>
+
+    <!-- Mobile Profile Slide Panel -->
+    <transition name="profile-overlay">
+      <div v-if="showProfilePanel" class="profile-panel-overlay" @click="closeProfilePanel"></div>
+    </transition>
+    <transition name="profile-panel">
+      <div v-if="showProfilePanel && authStore.session" class="profile-panel">
+        <div class="profile-panel-header">
+          <span class="profile-panel-title">Account</span>
+          <button @click="closeProfilePanel" class="profile-panel-close">
+            <X :size="20" />
+          </button>
+        </div>
+
+        <div class="profile-panel-user">
+          <div class="profile-panel-avatar">
+            {{ authStore.session.user.email[0].toUpperCase() }}
+          </div>
+          <div class="profile-panel-user-info">
+            <span class="profile-panel-name">{{ authStore.session.user.email.split('@')[0] }}</span>
+            <span class="profile-panel-email">{{ authStore.session.user.email }}</span>
+          </div>
+        </div>
+
+        <div class="profile-panel-divider"></div>
+
+        <nav class="profile-panel-nav">
+          <router-link to="/profile" class="profile-panel-item" @click="closeProfilePanel">
+            <User :size="20" />
+            <span>Account Settings</span>
+          </router-link>
+          <router-link to="/moderate" class="profile-panel-item" @click="closeProfilePanel">
+            <Shield :size="20" />
+            <span>Moderate</span>
+          </router-link>
+          <router-link v-if="authStore.profile?.role === 'admin'" to="/admin/users" class="profile-panel-item admin" @click="closeProfilePanel">
+            <Settings :size="20" />
+            <span>Admin Panel</span>
+          </router-link>
+        </nav>
+
+        <div class="profile-panel-divider"></div>
+
+        <button @click="handleSignOut" class="profile-panel-item logout">
+          <LogOut :size="20" />
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </transition>
 
     <!-- Background Orbs -->
     <div class="orb orb-1"></div>
@@ -435,6 +503,19 @@ const closeMobileMenu = () => {
   border-radius: 10px;
 }
 
+/* Mobile account button - hidden on desktop, shown on mobile */
+.mobile-account-btn {
+  display: none;
+}
+
+.profile-panel-overlay {
+  display: none;
+}
+
+.profile-panel {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .nav-content {
     padding: 12px 16px;
@@ -447,6 +528,27 @@ const closeMobileMenu = () => {
     color: white;
     cursor: pointer;
     z-index: 1002;
+  }
+
+  /* Mobile account avatar button in the topbar */
+  .mobile-account-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 6px;
+    cursor: pointer;
+    margin-left: auto;
+    transition: all 0.2s;
+    z-index: 1002;
+  }
+
+  .mobile-account-btn:hover,
+  .mobile-account-btn:active {
+    border-color: var(--primary-color);
+    background: var(--border-color);
   }
 
   .nav-links {
@@ -486,23 +588,188 @@ const closeMobileMenu = () => {
     font-size: 1.1rem;
   }
 
+  /* Hide desktop account dropdown entirely on mobile */
   .account-dropdown-wrapper {
-    width: 100%;
+    display: none !important;
   }
 
-  .account-trigger {
-    width: 100%;
+  /* Profile slide panel */
+  .profile-panel-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+  }
+
+  .profile-panel {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    max-width: 85vw;
+    background: #0d0d0d;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 2001;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
+    padding: 0;
+    overflow-y: auto;
+  }
+
+  .profile-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 16px;
+  }
+
+  .profile-panel-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .profile-panel-close {
+    background: var(--surface-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
   }
 
-  .dropdown-menu {
-    position: static;
+  .profile-panel-close:hover {
+    color: white;
+    border-color: var(--accent-color);
+  }
+
+  .profile-panel-user {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 20px 20px;
+  }
+
+  .profile-panel-avatar {
+    width: 44px;
+    height: 44px;
+    background: var(--primary-color);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .profile-panel-user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .profile-panel-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .profile-panel-email {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .profile-panel-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 20px;
+  }
+
+  .profile-panel-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 12px;
+    gap: 2px;
+  }
+
+  .profile-panel-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    cursor: pointer;
     width: 100%;
-    transform: none;
-    margin-top: 12px;
-    box-shadow: none;
-    background: rgba(255, 255, 255, 0.03) !important;
+    text-align: left;
+  }
+
+  .profile-panel-item:hover {
+    background: var(--surface-hover);
+    color: white;
+  }
+
+  .profile-panel-item.admin:hover {
+    color: var(--primary-color);
+  }
+
+  .profile-panel-item.logout {
+    margin: 0 12px 20px;
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
+  .profile-panel-item.logout:hover {
+    color: var(--accent-color);
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  /* Slide panel transitions */
+  .profile-panel-enter-active {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .profile-panel-leave-active {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  .profile-panel-enter-from,
+  .profile-panel-leave-to {
+    transform: translateX(100%);
+  }
+
+  .profile-overlay-enter-active {
+    transition: opacity 0.3s ease;
+  }
+  .profile-overlay-leave-active {
+    transition: opacity 0.2s ease;
+  }
+  .profile-overlay-enter-from,
+  .profile-overlay-leave-to {
+    opacity: 0;
   }
 }
 
