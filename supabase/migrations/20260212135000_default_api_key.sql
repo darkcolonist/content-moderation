@@ -8,7 +8,7 @@ BEGIN
     v_random_key := 'sk_live_' || encode(gen_random_bytes(24), 'hex');
 
     INSERT INTO public.api_keys (user_id, api_key, name)
-    VALUES (NEW.id, v_random_key, 'Default Key');
+    VALUES (NEW.id, v_random_key, 'default');
 
     RETURN NEW;
 END;
