@@ -111,7 +111,7 @@ body {
 .centered-container {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   flex: 1;
   padding: 24px;
   min-height: 100%;

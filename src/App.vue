@@ -67,6 +67,11 @@ const openProfilePanel = () => {
           </div>
         </button>
 
+        <!-- Mobile: Join button (when not logged in) -->
+        <router-link v-if="!isDashboard && !authStore.session" to="/signup" class="mobile-join-btn" @click="closeMobileMenu">
+          Join
+        </router-link>
+
         <!-- Mobile Menu Trigger -->
         <button v-if="!isDashboard" class="mobile-menu-btn" @click="showMobileMenu = !showMobileMenu">
           <Menu v-if="!showMobileMenu" :size="24" />
@@ -121,7 +126,7 @@ const openProfilePanel = () => {
               </div>
             </transition>
           </div>
-          <div v-else class="auth-btns">
+          <div v-else class="auth-btns desktop-only">
             <router-link to="/signup" class="btn-primary btn-sm" @click="closeMobileMenu">Join {{ appName }}</router-link>
           </div>
         </div>
@@ -425,6 +430,7 @@ const openProfilePanel = () => {
   flex-direction: column;
   overflow-y: auto; /* Allow global scrolling for public pages */
   overflow-x: hidden;
+  padding-top: 24px; /* Minimal spacing from navbar */
 }
 
 .global-loader {
@@ -508,6 +514,14 @@ const openProfilePanel = () => {
   display: none;
 }
 
+.mobile-join-btn {
+  display: none;
+}
+
+.desktop-only {
+  display: flex;
+}
+
 .profile-panel-overlay {
   display: none;
 }
@@ -519,6 +533,10 @@ const openProfilePanel = () => {
 @media (max-width: 768px) {
   .nav-content {
     padding: 12px 16px;
+  }
+
+  .desktop-only {
+    display: none !important;
   }
 
   .mobile-menu-btn {
@@ -549,6 +567,31 @@ const openProfilePanel = () => {
   .mobile-account-btn:active {
     border-color: var(--primary-color);
     background: var(--border-color);
+  }
+
+  /* Mobile join button - matches account button style */
+  .mobile-join-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    margin-left: auto;
+    transition: all 0.2s;
+    z-index: 1002;
+    text-decoration: none;
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .mobile-join-btn:hover,
+  .mobile-join-btn:active {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 12px var(--primary-glow);
   }
 
   .nav-links {
