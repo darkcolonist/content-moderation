@@ -73,6 +73,7 @@ export const authStore = reactive({
         if (session) {
             await this.fetchProfile()
         }
+        this.loading = false
 
         supabase.auth.onAuthStateChange(async (event, session) => {
             this.session = session

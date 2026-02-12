@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { supabase, isConfigured } from './lib/supabase'
+import { ref, onMounted, watch, computed } from 'vue'
+import { supabase, isConfigured, appName } from './lib/supabase'
 import ConfigError from './components/ConfigError.vue'
 import { Rocket, Loader2, ChevronDown, User, Shield, LogOut, Settings } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
@@ -15,9 +15,9 @@ onMounted(() => {
   // Watch for session changes to handle sign-out redirection
   watch(() => authStore.session, (newSession) => {
     if (!newSession) {
-      const publicRoutes = ['/', '/signup', '/features', '/pricing', '/docs']
+      const publicRoutes = ['/', '/login', '/signup', '/features', '/pricing', '/docs']
       if (!publicRoutes.includes(router.currentRoute.value.path)) {
-        router.push('/')
+        router.push('/login')
       }
     }
   })
@@ -27,15 +27,20 @@ const handleSignOut = async () => {
   await supabase.auth.signOut()
   showDropdown.value = false
 }
+
+const isDashboard = computed(() => {
+  const publicRoutes = ['/', '/login', '/signup', '/features', '/pricing', '/docs']
+  return !publicRoutes.includes(router.currentRoute.value.path) && authStore.session
+})
 </script>
 
 <template>
-  <div class="app-wrapper">
+  <div class="app-wrapper" :class="{ 'is-logged-in': isDashboard }">
     <nav class="navbar glass">
       <div class="nav-content">
         <router-link to="/" class="logo">
           <Rocket class="logo-icon" :size="24" />
-          <span>NovaModeration</span>
+          <span>{{ appName }}</span>
         </router-link>
         <div class="nav-links">
           <router-link to="/features" class="nav-link">Features</router-link>
@@ -84,6 +89,9 @@ const handleSignOut = async () => {
               </div>
             </transition>
           </div>
+          <div v-else class="auth-btns">
+            <router-link to="/signup" class="btn-primary btn-sm">Join Nova</router-link>
+          </div>
         </div>
       </div>
     </nav>
@@ -98,8 +106,8 @@ const handleSignOut = async () => {
       </router-view>
     </main>
 
-    <footer class="footer">
-      <p>&copy; 2024 NovaModeration. Built for the modern web.</p>
+    <footer class="footer" :class="{ 'footer-condensed': isDashboard }">
+      <p>&copy; 2024 {{ appName }}. Built for the modern web.</p>
     </footer>
 
     <!-- Background Orbs -->
@@ -133,21 +141,36 @@ const handleSignOut = async () => {
 .nav-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 16px 24px;
+  padding: 12px 24px; /* Reduced from 16px */
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: padding 0.3s ease;
+}
+
+.is-logged-in .nav-content {
+  padding: 8px 24px;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
   letter-spacing: -0.02em;
   text-decoration: none;
   color: white;
+}
+
+.is-logged-in .logo {
+  font-size: 1rem;
+}
+
+.is-logged-in .logo-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .logo-icon {
@@ -335,6 +358,14 @@ const handleSignOut = async () => {
   padding: 40px;
   color: var(--text-secondary);
   font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.footer-condensed {
+  padding: 12px;
+  font-size: 0.75rem;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid var(--border-color);
 }
 
 /* Atmospheric Background Elements */
@@ -376,6 +407,18 @@ const handleSignOut = async () => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.auth-btns {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  border-radius: 10px;
 }
 
 @media (max-width: 768px) {

@@ -62,7 +62,7 @@ const handleAuth = async () => {
 
 const toggleAuthMode = () => {
   error.value = null
-  router.push(isRegister.value ? '/' : '/signup')
+  router.push(isRegister.value ? '/login' : '/signup')
 }
 
 const handleOAuthLogin = async (provider) => {

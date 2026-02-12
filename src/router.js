@@ -10,6 +10,11 @@ const routes = [
     // Public Routes
     {
         path: '/',
+        name: 'home',
+        component: () => import('./views/Home.vue')
+    },
+    {
+        path: '/login',
         name: 'login',
         component: () => import('./components/Auth.vue')
     },
@@ -88,13 +93,13 @@ router.beforeEach(async (to, from, next) => {
 
     const { data: { session } } = await supabase.auth.getSession()
 
-    const publicRoutes = ['/', '/signup', '/features', '/pricing', '/docs']
+    const publicRoutes = ['/', '/login', '/signup', '/features', '/pricing', '/docs']
     const isProtectedRoute = !publicRoutes.includes(to.path)
 
-    if (session && (to.path === '/' || to.path === '/signup')) {
+    if (session && (to.path === '/login' || to.path === '/signup')) {
         next('/profile')
     } else if (!session && isProtectedRoute) {
-        next('/')
+        next('/login')
     } else {
         next()
     }

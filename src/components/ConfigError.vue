@@ -1,6 +1,7 @@
 <script setup>
 import { AlertTriangle, Terminal, ExternalLink, Copy, Check } from 'lucide-vue-next'
 import { ref } from 'vue'
+import { appName } from '../lib/supabase'
 
 const copied = ref(false)
 const envExample = `VITE_SUPABASE_URL=your_supabase_url
@@ -23,7 +24,7 @@ const copyToClipboard = () => {
       <div class="header-centered">
         <h1 class="gradient-text">Configuration Required</h1>
         <p class="text-secondary">
-          NovaModeration needs your Supabase credentials to establish a secure connection to the backend service.
+          {{ appName }} needs your Supabase credentials to establish a secure connection to the backend service.
         </p>
       </div>
 
